@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/* ===== 设计令牌系统 ===== */
+@theme {
+  /* 字体 */
+  --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
+  --font-sans: 'Noto Sans SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+
+  /* 圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* 阴影（分层投影） */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* 动效令牌 */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+}
+
+/* ===== 主题：素纸（亮色） ===== */
+:root {
+  /* 背景层 */
+  --background: 250 248 245;      /* #FAF8F5 暖白 */
+  --card: 255 255 255;            /* #FFFFFF 纯白卡片 */
+  --muted: 245 242 237;           /* #F5F2ED 次要背景 */
+
+  /* 文字层 */
+  --foreground: 26 26 26;         /* #1A1A1A 墨色 */
+  --muted-foreground: 115 115 115; /* #737373 次要文字 */
+  --card-foreground: 26 26 26;
+
+  /* 边框 */
+  --border: 234 230 222;          /* #EAE6DE */
+  --input: 234 230 222;
+  --ring: 59 91 219;              /* #3B5BDB 靛青 */
+
+  /* 强调色 */
+  --primary: 59 91 219;           /* #3B5BDB 靛青 */
+  --primary-foreground: 255 255 255;
+  --secondary: 245 242 237;
+  --secondary-foreground: 26 26 26;
+  --accent: 59 91 219;
+  --accent-foreground: 255 255 255;
+
+  /* 状态色 */
+  --destructive: 220 38 38;       /* #DC2626 红 */
+  --destructive-foreground: 255 255 255;
+  --success: 22 163 74;           /* #16A34A 绿 */
+  --warning: 217 119 6;           /* #D97706 橙 */
+  --info: 59 130 246;             /* #3B82F6 蓝 */
+}
+
+/* ===== 主题：墨黑（暗色） ===== */
+.dark {
+  --background: 22 22 22;         /* #161616 深灰 */
+  --card: 30 30 30;               /* #1E1E1E 卡片 */
+  --muted: 38 38 38;              /* #262626 */
+
+  --foreground: 232 230 225;      /* #E8E6E1 暖白 */
+  --muted-foreground: 163 163 163; /* #A3A3A3 */
+  --card-foreground: 232 230 225;
+
+  --border: 51 51 51;             /* #333333 */
+  --input: 51 51 51;
+  --ring: 107 138 255;            /* #6B8AFF 亮靛青 */
+
+  --primary: 107 138 255;         /* #6B8AFF */
+  --primary-foreground: 22 22 22;
+  --secondary: 38 38 38;
+  --secondary-foreground: 232 230 225;
+  --accent: 107 138 255;
+  --accent-foreground: 22 22 22;
+
+  --destructive: 248 113 113;
+  --destructive-foreground: 22 22 22;
+  --success: 74 222 128;
+  --warning: 251 191 36;
+  --info: 96 165 250;
+}
+
+/* ===== 基础样式 ===== */
+* {
+  border-color: rgb(var(--border));
+}
+
+body {
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===== 专注模式 ===== */
+.focus-mode .hide-on-focus {
+  display: none !important;
+}
+
+/* ===== View Transitions API 主题切换 ===== */
+::view-transition-old(root) {
+  animation: none;
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  animation: theme-circle-reveal 0.5s var(--ease-out);
+  z-index: 2;
+}
+
+@keyframes theme-circle-reveal {
+  from {
+    clip-path: circle(0 at var(--theme-transition-x, 50%) var(--theme-transition-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--theme-transition-radius, 150%) at var(--theme-transition-x, 50%) var(--theme-transition-y, 50%));
+  }
+}
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muted-foreground) / 0.5);
+}
+
+/* ===== 功能性高亮动画（被 useLocateOnTimeline 及各面板引用，非装饰性） ===== */
+.locate-highlight {
+  animation: locate-pulse 2s ease-out;
+}
+
+@keyframes locate-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(var(--primary) / 0.6); }
+  50% { box-shadow: 0 0 0 8px rgb(var(--primary) / 0.2); }
+  100% { box-shadow: 0 0 0 0 rgb(var(--primary) / 0); }
+}
+
+.search-highlight {
+  animation: search-highlight-pulse 2s ease-out;
+}
+
+@keyframes search-highlight-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(var(--primary) / 0.7); background-color: rgb(var(--primary) / 0.1); }
+  30% { box-shadow: 0 0 0 6px rgb(var(--primary) / 0.2); background-color: rgb(var(--primary) / 0.08); }
+  100% { box-shadow: 0 0 0 0 rgb(var(--primary) / 0); background-color: transparent; }
+}
