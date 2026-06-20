@@ -271,10 +271,10 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-border/50 bg-background/50">
-      <div className="flex items-center gap-1.5 border-b border-border/50 px-3 py-2">
-        <span className="text-muted-foreground">{icon}</span>
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="rounded-xl border border-border/40 bg-background/50 transition-all duration-200 hover:border-border/70 hover:shadow-sm hover:bg-background/70">
+      <div className="flex items-center gap-2 border-b border-border/30 px-3 py-2.5">
+        <span className="text-muted-foreground/70">{icon}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
           {title}
         </span>
       </div>
@@ -285,27 +285,28 @@ function SectionCard({
 
 function EmptyState() {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3 p-6">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-        <FireIcon size={20} className="text-muted-foreground" />
+    <div className="flex h-full flex-col items-center justify-center gap-4 p-8">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted/60">
+        <FireIcon size={24} className="text-muted-foreground/40" />
       </div>
-      <p className="text-center text-xs text-muted-foreground">
-        选择一个事件查看关联数据
-      </p>
+      <div className="text-center">
+        <p className="text-sm font-medium text-muted-foreground/70">选择一个事件查看关联数据</p>
+        <p className="mt-1 text-xs text-muted-foreground/40">在时间轴中点击任意事件</p>
+      </div>
     </div>
   );
 }
 
 function EmptyLabel({ label }: { label: string }) {
   return (
-    <p className="py-2 text-center text-[11px] italic text-muted-foreground/60">{label}</p>
+    <p className="py-3 text-center text-[11px] italic text-muted-foreground/40">{label}</p>
   );
 }
 
 function CharacterBadge({ character }: { character: Character }) {
   return (
-    <div className="flex items-center gap-1.5 rounded-md border border-border/50 bg-background px-2 py-1">
-      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+    <div className="flex items-center gap-2 rounded-lg border border-border/40 bg-background/80 px-2.5 py-1.5 transition-all duration-200 hover:border-border/70 hover:shadow-sm">
+      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary ring-2 ring-primary/5">
         {character.name.charAt(0)}
       </div>
       <div className="flex flex-col">
@@ -313,7 +314,7 @@ function CharacterBadge({ character }: { character: Character }) {
           {character.name}
         </span>
         {character.role && (
-          <span className="text-[10px] leading-tight text-muted-foreground">{character.role}</span>
+          <span className="text-[10px] leading-tight text-muted-foreground/60">{character.role}</span>
         )}
       </div>
     </div>
@@ -323,15 +324,15 @@ function CharacterBadge({ character }: { character: Character }) {
 function WorldSettingItem({ worldSetting }: { worldSetting: WorldSetting }) {
   const colorClass = CATEGORY_COLORS[worldSetting.category] ?? CATEGORY_COLORS['其他'];
   return (
-    <div className="flex items-center justify-between rounded-md border border-border/50 bg-background px-2 py-1.5">
+    <div className="flex items-center justify-between rounded-lg border border-border/40 bg-background/80 px-2.5 py-2 transition-all duration-200 hover:border-border/70">
       <div className="flex items-center gap-2">
-        <span className={cn('rounded px-1 py-0.5 text-[10px] font-medium', colorClass)}>
+        <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-medium', colorClass)}>
           {worldSetting.category}
         </span>
         <span className="text-[11px] font-medium text-foreground">{worldSetting.key}</span>
       </div>
       {worldSetting.value && (
-        <span className="max-w-[120px] truncate text-[10px] text-muted-foreground">
+        <span className="max-w-[120px] truncate text-[10px] text-muted-foreground/60">
           {worldSetting.value}
         </span>
       )}
@@ -351,23 +352,27 @@ function ForeshadowingItem({
   const isResolved = foreshadowing.resolvedEventId === eventId;
 
   return (
-    <div className="flex flex-col gap-1 rounded-md border border-border/50 bg-background px-2 py-1.5">
+    <div className="flex flex-col gap-1.5 rounded-lg border border-border/40 bg-background/80 px-2.5 py-2 transition-all duration-200 hover:border-border/70">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium text-foreground">{foreshadowing.title}</span>
-        <span className={cn('rounded px-1 py-0.5 text-[10px] font-medium', status.color)}>
+        <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-medium', status.color)}>
           {status.label}
         </span>
       </div>
       <div className="flex items-center gap-2">
         {isPlanted && (
-          <span className="text-[10px] text-amber-600 dark:text-amber-400">📍 埋下处</span>
+          <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400">
+            <span className="h-1 w-1 rounded-full bg-amber-400" />埋下处
+          </span>
         )}
         {isResolved && (
-          <span className="text-[10px] text-green-600 dark:text-green-400">✓ 回收处</span>
+          <span className="inline-flex items-center gap-1 text-[10px] text-green-600 dark:text-green-400">
+            <span className="h-1 w-1 rounded-full bg-green-400" />回收处
+          </span>
         )}
       </div>
       {foreshadowing.description && (
-        <p className="text-[10px] text-muted-foreground line-clamp-2">{foreshadowing.description}</p>
+        <p className="text-[10px] text-muted-foreground/60 line-clamp-2">{foreshadowing.description}</p>
       )}
     </div>
   );
@@ -390,23 +395,23 @@ function ConnectionItem({
   const typeClass = TYPE_COLORS[connection.type] ?? 'bg-gray-50 text-gray-700';
 
   return (
-    <div className="flex flex-col gap-1 rounded-md border border-border/50 bg-background px-2 py-1.5">
+    <div className="flex flex-col gap-1.5 rounded-lg border border-border/40 bg-background/80 px-2.5 py-2 transition-all duration-200 hover:border-border/70">
       <div className="flex items-center gap-2">
-        <span className={cn('rounded px-1 py-0.5 text-[10px] font-medium', typeClass)}>
+        <span className={cn('rounded-md px-1.5 py-0.5 text-[10px] font-medium', typeClass)}>
           {connection.type}
         </span>
-        <span className="text-[10px] text-muted-foreground">
+        <span className="text-[10px] text-muted-foreground/40">
           {isSource ? '→' : '←'}
         </span>
       </div>
       <button
         onClick={() => onJump(otherEventId)}
-        className="text-left text-[11px] font-medium text-primary hover:underline"
+        className="text-left text-[11px] font-medium text-primary hover:text-primary/80 transition-colors"
       >
         {otherEvent?.title ?? '未命名事件'}
       </button>
       {connection.description && (
-        <p className="text-[10px] text-muted-foreground line-clamp-2">{connection.description}</p>
+        <p className="text-[10px] text-muted-foreground/60 line-clamp-2">{connection.description}</p>
       )}
     </div>
   );

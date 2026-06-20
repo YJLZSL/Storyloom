@@ -137,19 +137,19 @@ export function TopToolbar() {
 
   return (
     <header
-      className="relative flex h-11 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur"
+      className="relative flex h-11 items-center gap-2 border-b border-border/60 bg-background/90 px-3 backdrop-blur"
       style={{ zIndex: 'var(--z-toolbar)' }}
     >
       {/* 左侧：品牌 + 工作区 */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 pr-2">
-          <LayersIcon className="size-5 text-primary" />
+        <div className="flex items-center gap-1.5 pr-2 group">
+          <LayersIcon className="size-5 text-primary transition-transform duration-300 group-hover:rotate-12" />
           <span className="hidden select-none font-serif text-sm font-semibold tracking-tight sm:inline">
             Storyloom
           </span>
         </div>
 
-        <div className="h-5 w-px bg-border" />
+        <div className="h-5 w-px bg-border/60" />
 
         <Dropdown
           options={workspaceOptions}
@@ -158,19 +158,19 @@ export function TopToolbar() {
           minColumnWidth={180}
           onClick={handleDropdownClick}
         >
-          <TButton variant="text" size="small" className="gap-1.5 font-medium">
-            <FolderOpenIcon className="size-4" />
+          <TButton variant="text" size="small" className="gap-1.5 font-medium rounded-md hover:bg-muted/80">
+            <FolderOpenIcon className="size-4 text-muted-foreground" />
             <span className="max-w-[120px] truncate text-xs">
               {currentWorkspace?.name || '选择工作区'}
             </span>
-            <DownIcon className="size-3 opacity-60" />
+            <DownIcon className="size-3 opacity-60 transition-transform duration-200" />
           </TButton>
         </Dropdown>
       </div>
 
       {/* 中间：视图 Tab */}
       <nav className="flex flex-1 items-center justify-center">
-        <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
+        <div className="flex items-center gap-0.5 rounded-xl bg-muted/40 p-1">
           {VIEW_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeView === tab.id;
@@ -179,14 +179,17 @@ export function TopToolbar() {
                 key={tab.id}
                 onClick={() => setActiveView(tab.id)}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-all duration-200',
+                  'relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-all duration-200',
                   isActive
                     ? 'bg-background font-medium text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground',
                 )}
               >
-                <Icon className="size-3.5" />
+                <Icon className={cn('size-3.5 transition-colors', isActive ? 'text-primary' : '')} />
                 <span className="hidden sm:inline">{tab.label}</span>
+                {isActive && (
+                  <span className="absolute -bottom-px left-2 right-2 h-0.5 rounded-full bg-primary" />
+                )}
               </button>
             );
           })}
@@ -200,14 +203,14 @@ export function TopToolbar() {
             variant="text"
             size="small"
             shape="square"
-            className="size-7"
-            icon={<ZoomOutIcon className="size-4" />}
+            className="size-7 hover:bg-muted/80"
+            icon={<ZoomOutIcon className="size-4 text-muted-foreground" />}
             onClick={() => zoomOut(0.1)}
           />
         </TTooltip>
 
         <div className="flex w-28 flex-col gap-0 px-1">
-          <span className="text-center text-[9px] font-mono tabular-nums text-muted-foreground">
+          <span className="text-center text-[9px] font-mono tabular-nums text-muted-foreground/60">
             {Math.round(zoom * 100)}%
           </span>
           <TSlider
@@ -227,20 +230,20 @@ export function TopToolbar() {
             variant="text"
             size="small"
             shape="square"
-            className="size-7"
-            icon={<ZoomInIcon className="size-4" />}
+            className="size-7 hover:bg-muted/80"
+            icon={<ZoomInIcon className="size-4 text-muted-foreground" />}
             onClick={() => zoomIn(0.1)}
           />
         </TTooltip>
 
-        <div className="mx-1 h-5 w-px bg-border" />
+        <div className="mx-1 h-5 w-px bg-border/60" />
 
         <TTooltip content="新建事件" placement="bottom">
           <TButton
             variant="text"
             size="small"
             theme="success"
-            className="gap-1 text-xs"
+            className="gap-1 text-xs hover:bg-green-50/50 dark:hover:bg-green-900/20"
             icon={<PlusIcon className="size-4" />}
             onClick={ctx.createEvent}
           >
@@ -252,21 +255,21 @@ export function TopToolbar() {
           <TButton
             variant="text"
             size="small"
-            className="gap-1 text-xs"
-            icon={<SaveIcon className="size-4" />}
+            className="gap-1 text-xs hover:bg-muted/80"
+            icon={<SaveIcon className="size-4 text-muted-foreground" />}
             onClick={ctx.save}
           >
             保存
           </TButton>
         </TTooltip>
 
-        <div className="mx-1 h-5 w-px bg-border" />
+        <div className="mx-1 h-5 w-px bg-border/60" />
 
         <TTooltip content="命令面板 (Ctrl+K)" placement="bottom">
           <TButton
             variant="outline"
             size="small"
-            className="gap-1 text-xs"
+            className="gap-1 text-xs border-border/60 hover:bg-muted/50"
             icon={<CommandIcon className="size-3.5" />}
             onClick={() => setCommandPaletteOpen(true)}
           >
@@ -281,8 +284,8 @@ export function TopToolbar() {
             variant="text"
             size="small"
             shape="square"
-            className="size-7"
-            icon={<SettingIcon className="size-4" />}
+            className="size-7 hover:bg-muted/80"
+            icon={<SettingIcon className="size-4 text-muted-foreground" />}
             aria-label="设置"
             onClick={() => setSettingsOpen(true)}
           />
@@ -310,8 +313,8 @@ export function TopToolbar() {
             variant="text"
             size="small"
             shape="square"
-            className="size-7"
-            icon={<PaletteIcon className="size-4" />}
+            className="size-7 hover:bg-muted/80"
+            icon={<PaletteIcon className="size-4 text-muted-foreground" />}
             aria-label="选择主题"
           />
         </TPopup>

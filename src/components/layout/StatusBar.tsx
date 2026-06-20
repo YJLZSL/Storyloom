@@ -4,7 +4,7 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useEvents, useCharacters, useWorldSettings, useTracks } from '@/services/api-hooks';
 import { countWorkspaceWords } from '@/lib/word-count';
-import { TTag, TBadge } from '@/components/ui-tdesign';
+import { cn } from '@/lib/utils';
 
 const VIEW_LABELS: Record<string, string> = {
   timeline: '时间轴',
@@ -30,6 +30,7 @@ export function StatusBar() {
 
   const eventCount = eventsData?.items?.length ?? 0;
   const trackCount = tracks?.length ?? 0;
+  const characterCount = characters?.length ?? 0;
 
   const totalWords = useMemo(
     () =>
@@ -52,44 +53,69 @@ export function StatusBar() {
     [eventsData, characters, worldSettings],
   );
 
+  const isWorking = isMutating > 0 || isFetching > 0;
   const saveStatus = isMutating > 0 ? '保存中…' : isFetching > 0 ? '同步中…' : '就绪';
-  const statusTheme = isMutating > 0 ? 'warning' : isFetching > 0 ? 'primary' : 'success';
 
   return (
-    <footer className="flex h-7 items-center gap-4 border-t border-border bg-card px-3 text-xs text-muted-foreground">
-      <div className="flex items-center gap-1.5">
-        <span>轨道</span>
-        <TBadge count={trackCount} shape="round" />
+    <footer className="flex h-7 items-center gap-3 border-t border-border/60 bg-card/80 px-3 text-xs backdrop-blur-sm">
+      {/* 左侧统计信息 */}
+      <div className="flex items-center gap-2">
+        <StatusDot active={isWorking} />
+        <span className="text-muted-foreground">{saveStatus}</span>
       </div>
-      <span className="h-3 w-px bg-border" />
-      <div className="flex items-center gap-1.5">
-        <span>事件</span>
-        <TBadge count={eventCount} shape="round" />
-      </div>
-      <span className="h-3 w-px bg-border" />
-      <div className="flex items-center gap-1.5">
-        <span>字数</span>
-        <TBadge count={totalWords.toLocaleString()} shape="round" />
+
+      <span className="h-3 w-px bg-border/60" />
+
+      <div className="flex items-center gap-3">
+        <StatItem label="轨道" value={trackCount} />
+        <StatItem label="事件" value={eventCount} />
+        <StatItem label="角色" value={characterCount} />
+        <StatItem label="字数" value={totalWords.toLocaleString()} />
       </div>
 
       <div className="flex-1" />
 
-      <TTag theme={statusTheme} variant="light">
-        {saveStatus}
-      </TTag>
-
-      <div className="flex-1" />
-
-      <div className="flex items-center gap-1.5">
-        <span>缩放</span>
-        <TBadge count={`${Math.round(zoom * 100)}%`} shape="round" />
+      {/* 右侧视图与缩放信息 */}
+      <div className="flex items-center gap-2">
+        <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+          {VIEW_LABELS[viewMode] || viewMode}
+        </span>
+        <span className="h-3 w-px bg-border/60" />
+        <span className="text-[10px] font-mono tabular-nums text-muted-foreground">
+          {Math.round(zoom * 100)}%
+        </span>
       </div>
-      <span className="h-3 w-px bg-border" />
-      <TBadge
-        count={VIEW_LABELS[viewMode] || viewMode}
-        shape="round"
-        color="rgb(var(--primary))"
-      />
     </footer>
+  );
+}
+
+/* ───────── 子组件 ───────── */
+
+function StatusDot({ active }: { active: boolean }) {
+  return (
+    <span className="relative flex h-2 w-2">
+      <span
+        className={cn(
+          'absolute inline-flex h-full w-full animate-ping rounded-full opacity-75',
+          active ? 'bg-amber-400' : 'bg-emerald-400',
+        )}
+        style={{ animationDuration: active ? '1.5s' : '3s' }}
+      />
+      <span
+        className={cn(
+          'relative inline-flex h-2 w-2 rounded-full',
+          active ? 'bg-amber-500' : 'bg-emerald-500',
+        )}
+      />
+    </span>
+  );
+}
+
+function StatItem({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-[10px] text-muted-foreground/70">{label}</span>
+      <span className="text-[11px] font-semibold tabular-nums text-foreground">{value}</span>
+    </div>
   );
 }

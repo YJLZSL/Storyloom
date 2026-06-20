@@ -28,6 +28,7 @@ import { setApiBase } from '@/services/api';
 import { useWorkspace } from '@/services/api-hooks';
 import { PanelLeftIcon, LayersIcon } from '@/lib/icons';
 import { TButton } from '@/components/ui-tdesign';
+import { cn } from '@/lib/utils';
 
 const viewVariants = {
   initial: { opacity: 0, y: 8, scale: 0.98 },
@@ -322,12 +323,12 @@ function MobileFloatButtons({
         variant={leftOpen ? 'base' : 'outline'}
         shape="circle"
         size="small"
-        className={
-          'pointer-events-auto h-11 w-11 shadow-lg ' +
-          (leftOpen ? 'btn-brown' : 'bg-background/90 backdrop-blur')
-        }
+        className={cn(
+          'pointer-events-auto h-12 w-12 shadow-lg transition-all duration-300',
+          leftOpen ? 'btn-brown scale-105' : 'bg-background/90 backdrop-blur hover:scale-105',
+        )}
         onClick={onToggleLeft}
-        icon={<PanelLeftIcon size={20} />}
+        icon={<PanelLeftIcon size={22} />}
         aria-label="打开目录"
       />
       {rightEnabled && (
@@ -335,12 +336,12 @@ function MobileFloatButtons({
           variant={rightOpen ? 'base' : 'outline'}
           shape="circle"
           size="small"
-          className={
-            'pointer-events-auto h-11 w-11 shadow-lg ' +
-            (rightOpen ? 'btn-green' : 'bg-background/90 backdrop-blur')
-          }
+          className={cn(
+            'pointer-events-auto h-12 w-12 shadow-lg transition-all duration-300',
+            rightOpen ? 'btn-green scale-105' : 'bg-background/90 backdrop-blur hover:scale-105',
+          )}
           onClick={onToggleRight}
-          icon={<LayersIcon size={20} />}
+          icon={<LayersIcon size={22} />}
           aria-label="打开面板"
         />
       )}

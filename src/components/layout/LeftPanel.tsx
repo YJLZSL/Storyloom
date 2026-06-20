@@ -81,7 +81,7 @@ export function LeftPanel() {
   return (
     <aside
       className={cn(
-        'relative flex flex-col border-r border-border backdrop-blur-sm transition-[width] duration-300 ease-in-out',
+        'relative flex flex-col border-r border-border/60 backdrop-blur-sm transition-[width] duration-300 ease-in-out',
         collapsed ? 'w-12' : 'w-60',
         bgClass,
       )}
@@ -90,12 +90,12 @@ export function LeftPanel() {
       {/* 折叠按钮 */}
       <div
         className={cn(
-          'flex h-10 shrink-0 items-center border-b border-border/50 px-2',
+          'flex h-10 shrink-0 items-center border-b border-border/40 px-2',
           collapsed ? 'justify-center' : 'justify-between',
         )}
       >
         {!collapsed && (
-          <span className="select-none text-xs font-semibold tracking-wide text-muted-foreground">
+          <span className="select-none text-xs font-semibold tracking-wide text-muted-foreground/70">
             资源目录
           </span>
         )}
@@ -105,7 +105,7 @@ export function LeftPanel() {
           size="small"
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? '展开侧边栏' : '折叠侧边栏'}
-          className="size-7 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          className="size-7 text-muted-foreground/60 hover:bg-accent/40 hover:text-accent-foreground transition-colors"
           icon={<ToggleIcon size={16} />}
         />
       </div>
@@ -113,83 +113,27 @@ export function LeftPanel() {
       {!collapsed && (
         <div className="flex flex-1 flex-col gap-3 overflow-auto p-3">
           {/* 搜索 */}
-          <div className="relative">
-            <SearchIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+          <div className="relative group">
+            <SearchIcon className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary/70 transition-colors" />
             <TInput
               size="small"
-              placeholder="搜索..."
+              placeholder="搜索资源..."
               value={searchQuery}
               onChange={(v) => setSearchQuery(v as string)}
-              className="h-8 pl-8 text-xs"
+              className="h-8 pl-8 text-xs border-border/50 focus:border-primary/50 transition-all"
               clearable
             />
           </div>
 
           {/* 创作工具 */}
-          <div className="space-y-1">
-            <div className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              创作
-            </div>
-            <div className="flex flex-col gap-0.5">
-              {CREATION_TOOLS.map((item) => {
-                const Icon = item.icon;
-                const isActive = activePanel === item.panelId;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleToolClick(item.panelId)}
-                    className={cn(
-                      'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-                      isActive
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-foreground hover:bg-accent hover:text-accent-foreground',
-                    )}
-                  >
-                    <Icon size={16} />
-                    <span>{item.label}</span>
-                    {isActive && (
-                      <span className="ml-auto inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <ToolSection title="创作" tools={CREATION_TOOLS} activePanel={activePanel} onToolClick={handleToolClick} />
 
           {/* 工具 */}
-          <div className="space-y-1">
-            <div className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              工具
-            </div>
-            <div className="flex flex-col gap-0.5">
-              {UTILITY_TOOLS.map((item) => {
-                const Icon = item.icon;
-                const isActive = activePanel === item.panelId;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => handleToolClick(item.panelId)}
-                    className={cn(
-                      'flex items-center gap-2 rounded-md px-2 py-1.5 text-xs transition-colors',
-                      isActive
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-foreground hover:bg-accent hover:text-accent-foreground',
-                    )}
-                  >
-                    <Icon size={16} />
-                    <span>{item.label}</span>
-                    {isActive && (
-                      <span className="ml-auto inline-block h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <ToolSection title="工具" tools={UTILITY_TOOLS} activePanel={activePanel} onToolClick={handleToolClick} />
 
           {/* 快速统计 */}
-          <div className="mt-auto space-y-2 rounded-lg border border-border/50 bg-background/50 p-2.5">
-            <div className="px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="mt-auto space-y-2 rounded-xl border border-border/40 bg-background/60 p-3 backdrop-blur-sm">
+            <div className="px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
               工作区概览
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -199,16 +143,16 @@ export function LeftPanel() {
               <StatBadge label="设定" value={worldSettings?.length ?? 0} color="purple" />
             </div>
             {selectedEventId && (
-              <div className="border-t border-border/50 pt-2">
-                <div className="text-[10px] text-muted-foreground">已选事件</div>
+              <div className="border-t border-border/30 pt-2">
+                <div className="text-[10px] text-muted-foreground/50">已选事件</div>
                 <div className="mt-1 truncate text-xs font-medium text-primary">
                   {events.find((e) => e.id === selectedEventId)?.title ?? selectedEventId.slice(0, 8)}
                 </div>
               </div>
             )}
             {selectedCharacterId && (
-              <div className="border-t border-border/50 pt-2">
-                <div className="text-[10px] text-muted-foreground">已选角色</div>
+              <div className="border-t border-border/30 pt-2">
+                <div className="text-[10px] text-muted-foreground/50">已选角色</div>
                 <div className="mt-1 truncate text-xs font-medium text-primary">
                   {characters?.find((c) => c.id === selectedCharacterId)?.name ?? selectedCharacterId.slice(0, 8)}
                 </div>
@@ -220,7 +164,7 @@ export function LeftPanel() {
 
       {/* 折叠状态只显示图标 */}
       {collapsed && (
-        <div className="flex flex-1 flex-col items-center gap-2 py-2">
+        <div className="flex flex-1 flex-col items-center gap-1 py-2">
           {[...CREATION_TOOLS, ...UTILITY_TOOLS].map((item) => {
             const Icon = item.icon;
             const isActive = activePanel === item.panelId;
@@ -231,10 +175,10 @@ export function LeftPanel() {
                 shape="square"
                 size="small"
                 className={cn(
-                  'size-8',
+                  'size-9 rounded-lg transition-all duration-200',
                   isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                    ? 'bg-primary/10 text-primary shadow-sm'
+                    : 'text-muted-foreground/60 hover:bg-accent/40 hover:text-accent-foreground',
                 )}
                 onClick={() => handleToolClick(item.panelId)}
                 icon={<Icon size={18} />}
@@ -245,6 +189,52 @@ export function LeftPanel() {
         </div>
       )}
     </aside>
+  );
+}
+
+/* ───────── 子组件：工具分区 ───────── */
+
+function ToolSection({
+  title,
+  tools,
+  activePanel,
+  onToolClick,
+}: {
+  title: string;
+  tools: ToolItem[];
+  activePanel: string | null;
+  onToolClick: (id: ToolItem['panelId']) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+        {title}
+      </div>
+      <div className="flex flex-col gap-0.5">
+        {tools.map((item) => {
+          const Icon = item.icon;
+          const isActive = activePanel === item.panelId;
+          return (
+            <button
+              key={item.id}
+              onClick={() => onToolClick(item.panelId)}
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs transition-all duration-200',
+                isActive
+                  ? 'bg-primary/8 text-primary font-medium shadow-sm'
+                  : 'text-foreground/80 hover:bg-accent/40 hover:text-accent-foreground',
+              )}
+            >
+              <Icon size={16} className={cn('transition-colors', isActive ? 'text-primary' : 'text-muted-foreground/60')} />
+              <span>{item.label}</span>
+              {isActive && (
+                <span className="ml-auto inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -259,16 +249,20 @@ function StatBadge({
   value: number;
   color: 'blue' | 'green' | 'amber' | 'purple';
 }) {
-  const colorMap: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300',
-    green: 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300',
-    amber: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300',
-    purple: 'bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300',
+  const colorMap: Record<string, { bg: string; text: string; dot: string }> = {
+    blue: { bg: 'bg-blue-50/70 dark:bg-blue-900/15', text: 'text-blue-700 dark:text-blue-300', dot: 'bg-blue-400' },
+    green: { bg: 'bg-green-50/70 dark:bg-green-900/15', text: 'text-green-700 dark:text-green-300', dot: 'bg-green-400' },
+    amber: { bg: 'bg-amber-50/70 dark:bg-amber-900/15', text: 'text-amber-700 dark:text-amber-300', dot: 'bg-amber-400' },
+    purple: { bg: 'bg-purple-50/70 dark:bg-purple-900/15', text: 'text-purple-700 dark:text-purple-300', dot: 'bg-purple-400' },
   };
+  const c = colorMap[color];
   return (
-    <div className={cn('flex items-center justify-between rounded-md px-2 py-1', colorMap[color])}>
-      <span className="text-[10px] opacity-70">{label}</span>
-      <span className="text-xs font-semibold tabular-nums">{value}</span>
+    <div className={cn('flex items-center justify-between rounded-lg px-2.5 py-1.5', c.bg)}>
+      <div className="flex items-center gap-1.5">
+        <span className={cn('h-1.5 w-1.5 rounded-full', c.dot)} />
+        <span className={cn('text-[10px]', c.text)}>{label}</span>
+      </div>
+      <span className={cn('text-xs font-semibold tabular-nums', c.text)}>{value}</span>
     </div>
   );
 }

@@ -64,3 +64,5 @@ test-install/
 # Frontend aesthetics audit artifacts (local only)
 .audit-shots/
 audit_frontend.py
+screenshot-*.png
+test_workspace.json
