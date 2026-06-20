@@ -1,4 +1,7 @@
+import pino from 'pino';
 import type { AIChatRequest, AIChatResponse } from '../../shared/types.js';
+
+const aiLog = pino({ name: 'ai-proxy' });
 
 interface AIProviderConfig {
   apiKey: string;
@@ -120,7 +123,7 @@ export async function chatCompletion(request: AIChatRequest): Promise<AIChatResp
     };
   } catch (err) {
     // API 调用失败时降级到模拟模式
-    console.error('[AI] API call failed, falling back to simulation:', err);
+    aiLog.error({ err }, 'API call failed, falling back to simulation');
     return {
       content: getSimulatedResponse(request.messages),
       model: 'simulated (API error)',
@@ -199,7 +202,7 @@ export async function* chatCompletionStream(request: AIChatRequest): AsyncGenera
     }
   } catch (err) {
     // 流式 API 失败时降级到模拟流式响应
-    console.error('[AI] Stream API failed, falling back to simulation:', err);
+    aiLog.error({ err }, 'Stream API failed, falling back to simulation');
     yield JSON.stringify({ degraded: true, error: err instanceof Error ? err.message : String(err) });
     const fullResponse = getSimulatedResponse(request.messages);
     const chunks = fullResponse.split('');

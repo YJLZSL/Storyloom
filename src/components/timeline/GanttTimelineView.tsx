@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef } from 'react';
-import { GanttChart, Filter, Users } from 'lucide-react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { ChartHistogramIcon, FilterIcon, GroupIcon } from '@/lib/icons';
 import { useEvents, useCharacters, useTracks } from '@/services/api-hooks';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { useSelectionStore } from '@/stores/useSelectionStore';
+import { scrollSelectedIntoView } from '@/utils/revealInBestView';
 import type { Character } from '../../../shared/types';
 
 interface RowSegment {
@@ -23,7 +24,8 @@ interface Row {
 
 export function GanttTimelineView() {
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
-  const setSelectedEvent = useTimelineStore((s) => s.setSelectedEvent);
+  const selectEvent = useSelectionStore((s) => s.selectEvent);
+  const selectedEventId = useSelectionStore((s) => s.selectedEventId);
   const setActivePanel = useUIStore((s) => s.setActivePanel);
   const { data: eventsData } = useEvents(workspaceId);
   const { data: characters } = useCharacters(workspaceId);
@@ -35,7 +37,7 @@ export function GanttTimelineView() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const openEventEditor = (eventId: string) => {
-    setSelectedEvent(eventId);
+    selectEvent(eventId);
     setActivePanel('event-editor');
   };
 
@@ -174,10 +176,19 @@ export function GanttTimelineView() {
     });
   };
 
+  // Scroll selected event into view
+  useEffect(() => {
+    if (!selectedEventId || !containerRef.current) return;
+    const timer = requestAnimationFrame(() => {
+      scrollSelectedIntoView('event', selectedEventId, containerRef.current);
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [selectedEventId]);
+
   return (
     <div ref={containerRef} className="h-full flex flex-col p-6 overflow-auto">
       <div className="flex items-center gap-3 mb-4">
-        <GanttChart className="w-6 h-6 text-primary" />
+        <ChartHistogramIcon size={24} className="text-primary" />
         <h2 className="font-serif text-2xl font-semibold tracking-tight">事序图</h2>
         <div className="flex-1" />
         {/* 筛选模式切换 */}
@@ -188,7 +199,7 @@ export function GanttTimelineView() {
               filterMode === 'character' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Users className="w-3 h-3" />
+            <GroupIcon size={12} />
             按角色
           </button>
           <button
@@ -197,7 +208,7 @@ export function GanttTimelineView() {
               filterMode === 'track' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            <Filter className="w-3 h-3" />
+            <FilterIcon size={12} />
             按轨道
           </button>
         </div>
@@ -287,8 +298,11 @@ export function GanttTimelineView() {
                     return (
                       <div
                         key={seg.eventId}
+                        data-event-id={seg.eventId}
                         onClick={() => openEventEditor(seg.eventId)}
-                        className="absolute top-2 bottom-2 rounded-md border border-white/20 px-2 flex items-center cursor-pointer hover:brightness-110 transition-all overflow-hidden"
+                        className={`absolute top-2 bottom-2 rounded-md border border-white/20 px-2 flex items-center cursor-pointer hover:brightness-110 transition-all overflow-hidden ${
+                          selectedEventId === seg.eventId ? 'ring-2 ring-primary z-10' : ''
+                        }`}
                         style={{
                           left: `${leftPct}%`,
                           width: `${widthPct}%`,

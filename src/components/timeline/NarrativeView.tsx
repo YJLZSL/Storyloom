@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { GripVertical, Clock, Pencil, Trash2, BookOpen } from 'lucide-react';
+import { DragIcon, ClockIcon, PencilIcon, DeleteIcon, BookOpenIcon } from '@/lib/icons';
 import { useEvents, useUpdateEvent, useDeleteEvent } from '@/services/api-hooks';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { useSelectionStore } from '@/stores/useSelectionStore';
+import { scrollSelectedIntoView } from '@/utils/revealInBestView';
 
 interface DragState {
   eventId: string;
@@ -14,7 +15,8 @@ interface DragState {
 
 export function NarrativeView() {
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
-  const setSelectedEvent = useTimelineStore((s) => s.setSelectedEvent);
+  const selectEvent = useSelectionStore((s) => s.selectEvent);
+  const selectedEventId = useSelectionStore((s) => s.selectedEventId);
   const setActivePanel = useUIStore((s) => s.setActivePanel);
   const { data: eventsData } = useEvents(workspaceId);
   const updateEvent = useUpdateEvent();
@@ -28,9 +30,9 @@ export function NarrativeView() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const openEventEditor = useCallback((eventId: string) => {
-    setSelectedEvent(eventId);
+    selectEvent(eventId);
     setActivePanel('event-editor');
-  }, [setSelectedEvent, setActivePanel]);
+  }, [selectEvent, setActivePanel]);
 
   // 按 narrativeOrder 排序事件（无值视为 0）
   const sortedEvents = useMemo(() => {
@@ -117,10 +119,19 @@ export function NarrativeView() {
     };
   }, [dragState, handleDragMove, handleDragEnd]);
 
+  // Scroll selected event into view
+  useEffect(() => {
+    if (!selectedEventId || !containerRef.current) return;
+    const timer = requestAnimationFrame(() => {
+      scrollSelectedIntoView('event', selectedEventId, containerRef.current);
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [selectedEventId]);
+
   return (
     <div ref={containerRef} className="h-full flex flex-col p-6 overflow-auto">
       <div className="flex items-center gap-3 mb-6">
-        <BookOpen className="w-6 h-6 text-primary" />
+        <BookOpenIcon size={24} className="text-primary" />
         <h2 className="font-serif text-2xl font-semibold tracking-tight">叙事顺序</h2>
         <span className="text-xs text-muted-foreground font-sans">
           拖拽调整叙事顺序（独立于时间顺序）
@@ -143,9 +154,9 @@ export function NarrativeView() {
               )}
               <div
                 data-narrative-id={event.id}
-                className={`narrative-card group flex items-start gap-3 p-4 rounded-lg border border-border hover:bg-accent/40 hover:translate-x-1 transition-all cursor-pointer ${
-                  isDragging ? 'opacity-40' : ''
-                }`}
+                className={`narrative-card group flex items-start gap-3 p-4 rounded-lg border hover:bg-accent/40 hover:translate-x-1 transition-all cursor-pointer ${
+                  selectedEventId === event.id ? 'border-primary ring-2 ring-primary/40 bg-accent/20' : 'border-border'
+                } ${isDragging ? 'opacity-40' : ''}`}
                 onClick={() => !dragState?.hasMoved && openEventEditor(event.id)}
               >
                 {/* 叙事序号 */}
@@ -165,7 +176,7 @@ export function NarrativeView() {
                   className="mt-1 p-1 rounded text-muted-foreground/40 hover:text-foreground hover:bg-accent cursor-grab active:cursor-grabbing transition-colors shrink-0"
                   title="拖拽调整顺序"
                 >
-                  <GripVertical className="w-4 h-4" />
+                  <DragIcon size={16} />
                 </button>
 
                 {/* 内容 */}
@@ -176,7 +187,7 @@ export function NarrativeView() {
                     </h4>
                     {event.startTime && (
                       <span className="flex items-center gap-1 text-[10px] text-muted-foreground font-mono tracking-wide shrink-0">
-                        <Clock className="w-3 h-3" />
+                        <ClockIcon size={12} />
                         {new Date(event.startTime).toLocaleDateString('zh-CN')}
                       </span>
                     )}
@@ -222,7 +233,7 @@ export function NarrativeView() {
                     className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                     title="编辑"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
+                    <PencilIcon size={14} />
                   </button>
                   <button
                     onClick={(e) => {
@@ -232,7 +243,7 @@ export function NarrativeView() {
                     className="p-1.5 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
                     title="删除"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <DeleteIcon size={14} />
                   </button>
                 </div>
               </div>

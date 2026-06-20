@@ -1,18 +1,86 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Settings, PanelLeftOpen, PanelLeftClose, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { streamAIChat } from '@/services/ai-stream.js';
 import type { AIChatMessage as StreamChatMessage } from '@/services/ai-stream.js';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore.js';
 import { useTimelineStore } from '@/stores/useTimelineStore.js';
 import { useEvent } from '@/services/api-hooks.js';
+import { getAIConfig } from '@/lib/ai-config.js';
+import {
+  AnalysisIcon,
+  IdeaIcon,
+  PencilIcon,
+  RobotIcon,
+  SettingConfigIcon,
+  SearchIcon,
+  MenuUnfoldIcon,
+  MenuFoldIcon,
+} from '@/lib/icons';
+import { TCard, TButton, TTag, TBadge } from '@/components/ui-tdesign';
 import { AIConfigPanel } from './AIConfigPanel.js';
 import { AIMessage } from './AIMessage.js';
 import { AIConversationList } from './AIConversationList.js';
 import { AIInput } from './AIInput.js';
 import { useAIConversations } from './useAIConversations.js';
 
-const FUNCTIONS = ['续写', '润色', '翻译', '总结', '创意', '代码'];
+interface FeatureItem {
+  key: string;
+  title: string;
+  description: string;
+  icon: typeof AnalysisIcon;
+  fn: string;
+  primaryText: string;
+  secondaryText: string;
+}
+
+const FEATURES: FeatureItem[] = [
+  {
+    key: 'analyze',
+    title: '内容分析',
+    description: '梳理结构、提炼要点',
+    icon: SearchIcon,
+    fn: '分析',
+    primaryText: '一键分析',
+    secondaryText: '自定义',
+  },
+  {
+    key: 'inspire',
+    title: '灵感启发',
+    description: '打开思路、激发创意',
+    icon: IdeaIcon,
+    fn: '启发灵感，围绕',
+    primaryText: '一键启发',
+    secondaryText: '自定义',
+  },
+  {
+    key: 'revise',
+    title: '修改建议',
+    description: '优化表达与逻辑',
+    icon: PencilIcon,
+    fn: '提出修改建议，针对',
+    primaryText: '一键建议',
+    secondaryText: '自定义',
+  },
+  {
+    key: 'split',
+    title: '结构拆分',
+    description: '拆分章节与情节结构',
+    icon: AnalysisIcon,
+    fn: '拆分结构，针对',
+    primaryText: '打开工作区',
+    secondaryText: '选择场景',
+  },
+];
+
+const PROVIDER_LABELS: Record<string, string> = {
+  deepseek: 'DeepSeek',
+  kimi: 'Kimi',
+  glm: '智谱 GLM',
+  minimax: 'MiniMax',
+  siliconflow: 'SiliconFlow',
+  openai: 'OpenAI',
+  custom: '自定义',
+};
 
 export function AIPanel() {
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
@@ -37,9 +105,28 @@ export function AIPanel() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [showList, setShowList] = useState(false);
+  const [modelInfo, setModelInfo] = useState<{ provider: string; model: string } | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 同步当前模型配置
+  const refreshModelInfo = useCallback(() => {
+    const cfg = getAIConfig();
+    if (cfg) {
+      setModelInfo({ provider: cfg.provider, model: cfg.model });
+    } else {
+      setModelInfo({ provider: 'deepseek', model: 'deepseek-v4-flash (免费)' });
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshModelInfo();
+  }, [refreshModelInfo]);
+
+  useEffect(() => {
+    if (!configOpen) refreshModelInfo();
+  }, [configOpen, refreshModelInfo]);
 
   // 自动滚动到底部
   const scrollToBottom = useCallback(() => {
@@ -176,35 +263,44 @@ export function AIPanel() {
     switchConversation(id);
   };
 
-  const handleFunction = (fn: string) => {
-    setInput(`请帮我${fn}以下内容：`);
+  const handleFunction = (fn: string, custom = false) => {
+    if (custom) {
+      setInput(`请帮我${fn}：\n`);
+    } else {
+      setInput(`请帮我${fn}以下内容：\n`);
+    }
   };
 
   const messages = currentConversation?.messages ?? [];
+
+  const currentModelDisplay = modelInfo?.model || '未配置模型';
+  const currentProviderLabel = modelInfo?.provider ? PROVIDER_LABELS[modelInfo.provider] || modelInfo.provider : '未知来源';
 
   return (
     <div className="h-full flex flex-col">
       {/* 顶部工具栏 */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border shrink-0">
         <div className="flex items-center gap-1">
-          <button
+          <TButton
+            variant="text"
+            shape="square"
+            size="small"
             onClick={() => setShowList((v) => !v)}
-            className="p-1.5 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
             title={showList ? '隐藏对话列表' : '显示对话列表'}
-          >
-            {showList ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-          </button>
+            icon={showList ? <MenuFoldIcon size={16} /> : <MenuUnfoldIcon size={16} />}
+          />
           <span className="text-xs text-muted-foreground">
             {currentConversation ? currentConversation.title : 'AI 助手'}
           </span>
         </div>
-        <button
+        <TButton
+          variant="text"
+          shape="square"
+          size="small"
           onClick={() => setConfigOpen(true)}
-          className="p-1.5 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
           title="AI 配置"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
+          icon={<SettingConfigIcon size={16} />}
+        />
       </div>
 
       <AIConfigPanel open={configOpen} onClose={() => setConfigOpen(false)} />
@@ -224,29 +320,93 @@ export function AIPanel() {
         )}
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* 选中事件上下文提示 */}
-          {selectedEvent && (
-            <div className="px-3 py-1.5 bg-primary/5 border-b border-border text-[11px] text-muted-foreground shrink-0">
-              <span className="text-primary font-medium">上下文：</span>
-              选中事件「{selectedEvent.title}」
+          {/* 棕色渐变横幅 */}
+          <div className="shrink-0 mx-3 mt-3 rounded-xl overflow-hidden bg-gradient-to-r from-amber-800 to-amber-600 text-white shadow-sm">
+            <div className="px-4 py-4 flex items-center gap-3">
+              <div className="p-2 rounded-full bg-white/15 backdrop-blur-sm">
+                <RobotIcon size={28} theme="filled" fill="#fff" />
+              </div>
+              <div>
+                <div className="text-base font-semibold tracking-wide">AI 创作助手</div>
+                <div className="text-xs text-white/80 mt-0.5">智能分析 · 创意启发 · 写作辅助</div>
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* 模型信息条 */}
+          <div className="shrink-0 mx-3 mt-2 px-3 py-2 rounded-lg border border-border bg-card/80 flex items-center gap-2 flex-wrap">
+            <TTag variant="light" size="small" theme="primary">
+              AI 配置已就绪
+            </TTag>
+            <span className="text-[11px] text-muted-foreground">当前模型</span>
+            <TBadge count={currentModelDisplay} shape="round" color="var(--td-brand-color-light)" />
+            <span className="text-[11px] text-muted-foreground">来源</span>
+            <TTag variant="light" size="small" theme="default">
+              {currentProviderLabel}
+            </TTag>
+            <div className="ml-auto">
+              <TButton
+                variant="text"
+                size="small"
+                theme="primary"
+                onClick={() => setConfigOpen(true)}
+              >
+                切换模型
+              </TButton>
+            </div>
+          </div>
+
+          {/* 顶部功能卡片 */}
+          <div className="px-3 pt-3 pb-2 shrink-0">
+            <div className="grid grid-cols-2 gap-2">
+              {FEATURES.map((feature) => {
+                const Icon = feature.icon;
+                return (
+                  <TCard
+                    key={feature.key}
+                    bordered
+                    hoverShadow
+                    size="small"
+                    className="overflow-hidden"
+                    avatar={
+                      <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                        <Icon size={34} />
+                      </div>
+                    }
+                    title={feature.title}
+                    description={feature.description}
+                    footer={
+                      <div className="flex items-center gap-1.5">
+                        <TButton
+                          theme="primary"
+                          size="small"
+                          disabled={isStreaming}
+                          onClick={() => handleFunction(feature.fn)}
+                        >
+                          {feature.primaryText}
+                        </TButton>
+                        <TButton
+                          variant="outline"
+                          size="small"
+                          disabled={isStreaming}
+                          onClick={() => handleFunction(feature.fn, true)}
+                        >
+                          {feature.secondaryText}
+                        </TButton>
+                      </div>
+                    }
+                  />
+                );
+              })}
+            </div>
+          </div>
 
           {/* 消息列表 */}
           <div ref={scrollRef} className="flex-1 overflow-auto p-3 space-y-3">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center px-4">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                  {isStreaming ? (
-                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                  ) : (
-                    <span className="text-primary text-lg">✦</span>
-                  )}
-                </div>
                 <p className="text-sm text-muted-foreground">
-                  {currentConversation
-                    ? '输入消息开始对话…'
-                    : '点击左上角按钮新建对话，或直接输入消息自动创建。'}
+                  选择一个功能开始，或直接输入你的问题
                 </p>
               </div>
             ) : (
@@ -263,22 +423,6 @@ export function AIPanel() {
                 );
               })
             )}
-          </div>
-
-          {/* 快捷功能 */}
-          <div className="px-3 pt-2 shrink-0">
-            <div className="flex flex-wrap gap-1">
-              {FUNCTIONS.map((fn) => (
-                <button
-                  key={fn}
-                  onClick={() => handleFunction(fn)}
-                  disabled={isStreaming}
-                  className="px-2 py-0.5 rounded text-[10px] bg-accent hover:bg-accent/80 transition-colors disabled:opacity-50"
-                >
-                  {fn}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* 输入区 */}

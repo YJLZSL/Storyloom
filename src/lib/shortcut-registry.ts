@@ -37,6 +37,7 @@ export interface ShortcutBinding {
 // --- 常量 ---
 
 const STORAGE_KEY = 'shortcut-bindings';
+const OVERRIDES_KEY = 'shortcut-overrides';
 
 const MODIFIER_KEYS = new Set(['mod', 'ctrl', 'meta', 'cmd', 'shift', 'alt']);
 
@@ -79,16 +80,34 @@ let bindings: Map<string, ShortcutBinding> = buildDefaultBindings();
 function loadCustomBindings(): void {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return;
-    const custom = JSON.parse(stored) as Record<string, { keys: string[]; enabled?: boolean }>;
-    for (const [id, customBinding] of Object.entries(custom)) {
-      const binding = bindings.get(id);
-      if (binding) {
-        bindings.set(id, {
-          ...binding,
-          keys: [...customBinding.keys],
-          enabled: customBinding.enabled ?? true,
-        });
+    if (stored) {
+      const custom = JSON.parse(stored) as Record<string, { keys: string[]; enabled?: boolean }>;
+      for (const [id, customBinding] of Object.entries(custom)) {
+        const binding = bindings.get(id);
+        if (binding) {
+          bindings.set(id, {
+            ...binding,
+            keys: [...customBinding.keys],
+            enabled: customBinding.enabled ?? true,
+          });
+        }
+      }
+    }
+  } catch {
+    // 忽略解析错误
+  }
+  try {
+    const overrides = localStorage.getItem(OVERRIDES_KEY);
+    if (overrides) {
+      const parsed = JSON.parse(overrides) as Record<string, string>;
+      for (const [id, shortcutStr] of Object.entries(parsed)) {
+        const binding = bindings.get(id);
+        if (binding && typeof shortcutStr === 'string') {
+          bindings.set(id, {
+            ...binding,
+            keys: parseShortcut(shortcutStr),
+          });
+        }
       }
     }
   } catch {
@@ -98,15 +117,29 @@ function loadCustomBindings(): void {
 
 function saveCustomBindings(): void {
   const custom: Record<string, { keys: string[]; enabled: boolean }> = {};
+  const overrides: Record<string, string> = {};
   for (const binding of bindings.values()) {
-    const isDefault =
-      JSON.stringify(binding.keys) === JSON.stringify(binding.defaultKeys) && binding.enabled;
+    const isDefaultKeys =
+      JSON.stringify(binding.keys) === JSON.stringify(binding.defaultKeys);
+    const isDefault = isDefaultKeys && binding.enabled;
     if (!isDefault) {
       custom[binding.id] = { keys: binding.keys, enabled: binding.enabled };
+    }
+    if (!isDefaultKeys) {
+      overrides[binding.id] = binding.keys.join('+');
     }
   }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(custom));
+  } catch {
+    // 忽略写入错误
+  }
+  try {
+    if (Object.keys(overrides).length > 0) {
+      localStorage.setItem(OVERRIDES_KEY, JSON.stringify(overrides));
+    } else {
+      localStorage.removeItem(OVERRIDES_KEY);
+    }
   } catch {
     // 忽略写入错误
   }
@@ -203,7 +236,44 @@ export function resetAllShortcuts(): void {
     bindings.set(id, { ...binding, keys: [...binding.defaultKeys], enabled: true });
   }
   saveCustomBindings();
+  try {
+    localStorage.removeItem('shortcut-bindings');
+    localStorage.removeItem('shortcut-overrides');
+  } catch {
+    // ignore
+  }
   notifyListeners();
+}
+
+// --- 自定义覆盖层 API（用户设置覆盖默认） ---
+
+/** 设置某命令的自定义快捷键（接受字符串或数组形式） */
+export function setShortcut(commandId: string, keys: string | string[]): void {
+  const arr = typeof keys === 'string' ? parseShortcut(keys) : [...keys];
+  rebindShortcut(commandId, arr);
+}
+
+/** 获取所有用户自定义的快捷键覆盖 { commandId: 'Mod+K' } */
+export function getCustomShortcuts(): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const binding of bindings.values()) {
+    if (JSON.stringify(binding.keys) !== JSON.stringify(binding.defaultKeys)) {
+      result[binding.id] = binding.keys.join('+');
+    }
+  }
+  return result;
+}
+
+/** 清除所有自定义快捷键，还原为默认 */
+export function clearCustomShortcuts(): void {
+  resetAllShortcuts();
+}
+
+/** 获取当前生效的快捷键（优先自定义，其次默认） */
+export function getEffectiveShortcut(commandId: string): string[] | undefined {
+  const binding = bindings.get(commandId);
+  if (!binding) return undefined;
+  return [...binding.keys];
 }
 
 // --- 冲突检测 ---

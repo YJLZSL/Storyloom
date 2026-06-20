@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import { RefreshCw, AlertTriangle, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
-import { useEvents, useCharacters, useWorldSettings } from '@/services/api-hooks';
+import { LoadingIcon, CautionIcon, ErrorIcon, RightIcon, CheckIcon } from '@/lib/icons';
+import { useEvents, useCharacters, useWorldSettings, useForeshadowings } from '@/services/api-hooks';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useUIStore } from '@/stores/useUIStore';
@@ -20,13 +20,14 @@ export function ConsistencyPanel() {
   const { data: eventsData } = useEvents(workspaceId);
   const { data: characters } = useCharacters(workspaceId);
   const { data: worldSettings } = useWorldSettings(workspaceId);
+  const { data: foreshadowings } = useForeshadowings(workspaceId);
 
   const [checkTrigger, setCheckTrigger] = useState(0);
   const [isChecking, setIsChecking] = useState(false);
 
   const events = eventsData?.items ?? [];
 
-  // 运行检查（依赖 checkTrigger 用于手动重新检查）
+  // 运行检查（依赖 checkTrigger 用于手动重新检查；依赖 foreshadowings 用于伏笔变更联动）
   const issues: ConsistencyIssue[] = useMemo(() => {
     if (!characters || !worldSettings) return [];
     return runAllChecks({
@@ -35,7 +36,7 @@ export function ConsistencyPanel() {
       worldSettings,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [events, characters, worldSettings, checkTrigger]);
+  }, [events, characters, worldSettings, foreshadowings, checkTrigger]);
 
   const errorIssues = issues.filter((i) => i.severity === 'error');
   const warningIssues = issues.filter((i) => i.severity === 'warning');
@@ -61,17 +62,17 @@ export function ConsistencyPanel() {
           disabled={isChecking}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded text-xs bg-primary/10 hover:bg-primary/20 text-primary transition-colors font-sans disabled:opacity-50"
         >
-          <RefreshCw className={`w-3 h-3 ${isChecking ? 'animate-spin' : ''}`} />
+          <LoadingIcon size={12} spin={isChecking} />
           重新检查
         </button>
         <div className="flex-1" />
         <div className="flex items-center gap-2 text-[10px] font-mono">
           <span className="flex items-center gap-1 text-destructive">
-            <AlertCircle className="w-3 h-3" />
+            <ErrorIcon size={12} />
             {errorIssues.length}
           </span>
-          <span className="flex items-center gap-1 text-yellow-500">
-            <AlertTriangle className="w-3 h-3" />
+          <span className="flex items-center gap-1 text-warning">
+            <CautionIcon size={12} />
             {warningIssues.length}
           </span>
         </div>
@@ -81,7 +82,7 @@ export function ConsistencyPanel() {
       <div className="flex-1 overflow-auto space-y-3">
         {issues.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <ShieldCheck className="w-10 h-10 text-green-500 mb-3" />
+            <CheckIcon size={40} className="text-success mb-3" />
             <p className="text-sm font-medium text-foreground font-sans">未发现一致性问题</p>
             <p className="text-xs text-muted-foreground mt-1 font-sans">所有检查项均通过</p>
           </div>
@@ -121,15 +122,15 @@ function IssueGroup({
   onJumpToEvent: (eventId: string) => void;
 }) {
   const isError = severity === 'error';
-  const Icon = isError ? AlertCircle : AlertTriangle;
-  const headerColor = isError ? 'text-destructive' : 'text-yellow-500';
-  const borderColor = isError ? 'border-destructive/30' : 'border-yellow-500/30';
-  const bgColor = isError ? 'bg-destructive/5' : 'bg-yellow-500/5';
+  const Icon = isError ? ErrorIcon : CautionIcon;
+  const headerColor = isError ? 'text-destructive' : 'text-warning';
+  const borderColor = isError ? 'border-destructive/30' : 'border-warning/30';
+  const bgColor = isError ? 'bg-destructive/5' : 'bg-warning/5';
 
   return (
     <div>
       <div className={`flex items-center gap-1.5 px-2 py-1 rounded-t-md ${bgColor} ${borderColor} border`}>
-        <Icon className={`w-3.5 h-3.5 ${headerColor}`} />
+        <Icon size={14} className={headerColor} />
         <span className={`text-xs font-medium font-sans ${headerColor}`}>
           {title} ({issues.length})
         </span>
@@ -177,7 +178,7 @@ function IssueItem({
                 className="flex items-center gap-0.5 text-[10px] text-primary hover:underline font-sans"
               >
                 跳转
-                <ArrowRight className="w-2.5 h-2.5" />
+                <RightIcon size={10} />
               </button>
             )}
           </div>

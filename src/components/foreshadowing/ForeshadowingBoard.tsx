@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { AlertTriangle, MapPin } from 'lucide-react';
+import { CautionIcon, LocalTwoIcon } from '@/lib/icons';
 import { useForeshadowings, useUpdateForeshadowing, useEvents } from '@/services/api-hooks';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
@@ -12,18 +12,22 @@ const STATUS_LABELS: Record<string, string> = {
   resolved: '已回收',
   abandoned: '已废弃',
 };
-const STATUS_COLORS: Record<string, string> = {
-  planted: 'bg-yellow-500',
-  developed: 'bg-blue-500',
-  resolved: 'bg-green-500',
-  abandoned: 'bg-gray-500',
+
+// 状态颜色统一使用 CSS 变量，随主题切换
+const STATUS_COLOR_VARS: Record<string, string> = {
+  planted: '--warning',
+  developed: '--info',
+  resolved: '--success',
+  abandoned: '--muted-foreground',
 };
-const STATUS_BORDER: Record<string, string> = {
-  planted: 'border-t-yellow-500',
-  developed: 'border-t-blue-500',
-  resolved: 'border-t-green-500',
-  abandoned: 'border-t-gray-500',
-};
+
+function statusColorStyle(status: string): React.CSSProperties {
+  return { backgroundColor: `rgb(var(${STATUS_COLOR_VARS[status] ?? '--muted-foreground'}))` };
+}
+
+function statusBorderStyle(status: string): React.CSSProperties {
+  return { borderTopColor: `rgb(var(${STATUS_COLOR_VARS[status] ?? '--muted-foreground'}))` };
+}
 
 // 未回收伏笔警告阈值（毫秒，默认 14 天）
 const STALE_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000;
@@ -90,13 +94,14 @@ export function ForeshadowingBoard() {
               setDropTargetStatus(status);
               handleDragEnd();
             }}
-            className={`flex flex-col rounded-md border border-t-2 ${STATUS_BORDER[status]} bg-muted/30 transition-colors ${
+            className={`flex flex-col rounded-md border border-t-2 bg-muted/30 transition-colors ${
               dropTargetStatus === status ? 'bg-primary/10' : ''
             }`}
+            style={statusBorderStyle(status)}
           >
             {/* 列头 */}
             <div className="px-2 py-1.5 flex items-center gap-1.5 border-b border-border/50 shrink-0">
-              <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[status]}`} />
+              <span className="w-2 h-2 rounded-full" style={statusColorStyle(status)} />
               <span className="text-xs font-medium font-sans">{STATUS_LABELS[status]}</span>
               <span className="text-[10px] text-muted-foreground font-mono ml-auto">
                 {items.length}
@@ -124,12 +129,12 @@ export function ForeshadowingBoard() {
                     } ${dragState?.foreshadowingId === f.id ? 'opacity-40' : ''}`}
                   >
                     <div className="flex items-start gap-1">
-                      <span className={`w-1.5 h-1.5 rounded-full ${STATUS_COLORS[status]} mt-1 shrink-0`} />
+                      <span className="w-1.5 h-1.5 rounded-full mt-1 shrink-0" style={statusColorStyle(status)} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-medium font-sans truncate">{f.title}</span>
                           {isStale && (
-                            <AlertTriangle className="w-3 h-3 text-destructive shrink-0" />
+                            <CautionIcon size={12} className="text-destructive shrink-0" />
                           )}
                         </div>
                         {f.description && (
@@ -145,7 +150,7 @@ export function ForeshadowingBoard() {
                                 onClick={() => scrollToEvent(f.plantedEventId!)}
                                 className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground bg-accent/50 rounded px-1 py-0.5 font-sans hover:bg-accent transition-colors"
                               >
-                                <MapPin className="w-2 h-2" />
+                                <LocalTwoIcon size={8} />
                                 {eventMap.get(f.plantedEventId)}
                               </button>
                             )}
@@ -154,7 +159,7 @@ export function ForeshadowingBoard() {
                                 onClick={() => scrollToEvent(f.resolvedEventId!)}
                                 className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground bg-accent/50 rounded px-1 py-0.5 font-sans hover:bg-accent transition-colors"
                               >
-                                <MapPin className="w-2 h-2" />
+                                <LocalTwoIcon size={8} />
                                 {eventMap.get(f.resolvedEventId)}
                               </button>
                             )}

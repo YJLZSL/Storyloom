@@ -1,4 +1,4 @@
-import { Plus, Trash2, MessageSquare } from 'lucide-react';
+import { PlusIcon, DeleteIcon, MessageIcon } from '@/lib/icons';
 import type { AIConversation } from './useAIConversations';
 
 interface AIConversationListProps {
@@ -25,7 +25,7 @@ export function AIConversationList({
           className="p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
           title="新建对话"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <PlusIcon size={14} />
         </button>
       </div>
 
@@ -46,7 +46,7 @@ export function AIConversationList({
                     }`}
                     onClick={() => onSwitch(conv.id)}
                   >
-                    <MessageSquare className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                    <MessageIcon size={14} className="shrink-0 text-muted-foreground" />
                     <span className="flex-1 truncate text-xs">{conv.title || '新对话'}</span>
                     <button
                       onClick={(e) => {
@@ -56,7 +56,7 @@ export function AIConversationList({
                       className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-destructive/20 hover:text-destructive transition-all text-muted-foreground"
                       title="删除对话"
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <DeleteIcon size={12} />
                     </button>
                   </div>
                 </li>

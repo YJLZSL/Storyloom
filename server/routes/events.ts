@@ -2,21 +2,10 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { eq, and, between, like, desc, asc, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { events, eventCharacters, eventWorldSettings, characters } from '../db/schema.js';
-import { workspaceIdParam, eventIdParam, createEventBody, updateEventBody } from '../lib/validation.js';
+import { workspaceIdParam, eventIdParam, createEventBody, updateEventBody, validateWorkspaceExists } from '../lib/validation.js';
 import type { CreateEventRequest, UpdateEventRequest, EventFilterParams, BatchOperation, BatchEventsRequest } from '../../shared/types.js';
 
 export async function eventsRoutes(app: FastifyInstance) {
-
-  // 验证工作区存在的辅助函数
-  async function validateWorkspace(workspaceId: string, reply: FastifyReply): Promise<boolean> {
-    const { workspaces } = await import('../db/schema.js');
-    const ws = app.db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.id, workspaceId)).get();
-    if (!ws) {
-      reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: '工作区不存在' } });
-      return false;
-    }
-    return true;
-  }
 
   function escapeLike(str: string): string {
     return str.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
@@ -25,7 +14,10 @@ export async function eventsRoutes(app: FastifyInstance) {
   // GET / — 列出事件（支持分页、过滤、排序）
   app.get<{ Params: { workspaceId: string }; Querystring: EventFilterParams }>('/', async (request) => {
     const { workspaceId } = request.params;
-    const { trackId, search, startDate, endDate, sortBy = 'orderIndex', sortOrder = 'asc', page = 1, pageSize = 200 } = request.query;
+    const { trackId, search, startDate, endDate, sortBy = 'orderIndex', sortOrder = 'asc', page, pageSize } = request.query;
+
+    const safePageSize = Math.min(Math.max(pageSize ?? 200, 1), 200);
+    const safePage = Math.max(page ?? 1, 1);
 
     const conditions = [eq(events.workspaceId, workspaceId)];
 
@@ -35,7 +27,10 @@ export async function eventsRoutes(app: FastifyInstance) {
 
     if (search) {
       const escapedSearch = escapeLike(search);
-      conditions.push(sql`${events.title} LIKE ${`%${escapedSearch}%`} ESCAPE '\\'`);
+      const pattern = `%${escapedSearch}%`;
+      conditions.push(
+        sql`(${events.title} LIKE ${pattern} ESCAPE '\\' OR ${events.summary} LIKE ${pattern} ESCAPE '\\' OR ${events.location} LIKE ${pattern} ESCAPE '\\')`
+      );
     }
 
     if (startDate && endDate) {
@@ -57,11 +52,11 @@ export async function eventsRoutes(app: FastifyInstance) {
     const total = countResult?.count ?? 0;
 
     // 分页查询
-    const offset = (page - 1) * pageSize;
+    const offset = (safePage - 1) * safePageSize;
     const items = app.db.select().from(events)
       .where(whereClause)
       .orderBy(orderFn(orderColumn))
-      .limit(pageSize)
+      .limit(safePageSize)
       .offset(offset)
       .all();
 
@@ -111,9 +106,9 @@ export async function eventsRoutes(app: FastifyInstance) {
       data: {
         items: enrichedItems,
         total,
-        page,
-        pageSize,
-        totalPages: Math.ceil(total / pageSize),
+        page: safePage,
+        pageSize: safePageSize,
+        totalPages: Math.ceil(total / safePageSize),
       },
     };
   });
@@ -160,7 +155,7 @@ export async function eventsRoutes(app: FastifyInstance) {
     schema: { params: workspaceIdParam, body: createEventBody },
   }, async (request, reply) => {
     const { workspaceId } = request.params;
-    if (!await validateWorkspace(workspaceId, reply)) return;
+    if (!await validateWorkspaceExists(app, workspaceId, reply)) return;
     const body = request.body;
     const now = new Date();
     const id = body.id || uuidv4();
@@ -308,7 +303,7 @@ export async function eventsRoutes(app: FastifyInstance) {
   // POST /batch — 批量操作
   app.post<{ Params: { workspaceId: string }; Body: BatchEventsRequest }>('/batch', async (request, reply) => {
     const { workspaceId } = request.params;
-    if (!await validateWorkspace(workspaceId, reply)) return;
+    if (!await validateWorkspaceExists(app, workspaceId, reply)) return;
     const { operations } = request.body;
     const results: unknown[] = [];
 
@@ -330,27 +325,78 @@ export async function eventsRoutes(app: FastifyInstance) {
               startTime: data.startTime ? new Date(data.startTime) : null,
               endTime: data.endTime ? new Date(data.endTime) : null,
               orderIndex: data.orderIndex ?? 0,
+              narrativeOrder: data.narrativeOrder ?? 0,
               color: data.color || '',
               tagsJson: data.tagsJson || '[]',
               createdAt: now,
               updatedAt: now,
             }).returning().get();
+
+            // 处理角色关联
+            if (data.characterIds?.length) {
+              for (const charId of data.characterIds) {
+                app.db.insert(eventCharacters).values({
+                  eventId: id,
+                  characterId: charId,
+                  roleDescription: '',
+                }).run();
+              }
+            }
+
+            // 处理世界观设定关联
+            if (data.worldSettingIds?.length) {
+              for (const wsId of data.worldSettingIds) {
+                app.db.insert(eventWorldSettings).values({
+                  eventId: id,
+                  worldSettingId: wsId,
+                }).run();
+              }
+            }
+
             results.push(event);
             break;
           }
           case 'update': {
             const data = op.data as { id: string } & Partial<UpdateEventRequest>;
             const updateData: Record<string, unknown> = { updatedAt: new Date() };
+            if (data.trackId !== undefined) updateData.trackId = data.trackId;
             if (data.title !== undefined) updateData.title = data.title;
             if (data.summary !== undefined) updateData.summary = data.summary;
             if (data.description !== undefined) updateData.description = data.description;
             if (data.location !== undefined) updateData.location = data.location;
+            if (data.startTime !== undefined) updateData.startTime = data.startTime ? new Date(data.startTime) : null;
+            if (data.endTime !== undefined) updateData.endTime = data.endTime ? new Date(data.endTime) : null;
             if (data.orderIndex !== undefined) updateData.orderIndex = data.orderIndex;
+            if (data.narrativeOrder !== undefined) updateData.narrativeOrder = data.narrativeOrder;
             if (data.color !== undefined) updateData.color = data.color;
             if (data.tagsJson !== undefined) updateData.tagsJson = data.tagsJson;
             const updated = app.db.update(events).set(updateData)
               .where(and(eq(events.id, data.id), eq(events.workspaceId, workspaceId)))
               .returning().get();
+
+            // 更新角色关联
+            if (data.characterIds !== undefined) {
+              app.db.delete(eventCharacters).where(eq(eventCharacters.eventId, data.id)).run();
+              for (const charId of data.characterIds) {
+                app.db.insert(eventCharacters).values({
+                  eventId: data.id,
+                  characterId: charId,
+                  roleDescription: '',
+                }).run();
+              }
+            }
+
+            // 更新世界观设定关联
+            if (data.worldSettingIds !== undefined) {
+              app.db.delete(eventWorldSettings).where(eq(eventWorldSettings.eventId, data.id)).run();
+              for (const wsId of data.worldSettingIds) {
+                app.db.insert(eventWorldSettings).values({
+                  eventId: data.id,
+                  worldSettingId: wsId,
+                }).run();
+              }
+            }
+
             results.push(updated);
             break;
           }

@@ -1,6 +1,7 @@
 {
-  "name": "ai-timeline-creator",
-  "version": "4.0.0",
+  "name": "storyloom",
+  "version": "1.0.0",
+  "description": "Storyloom · 絮织 — Weave timelines into living stories. Desktop authoring workbench for visual novels and narrative-driven stories.",
   "type": "module",
   "main": "electron-out/electron/main.js",
   "scripts": {
@@ -10,50 +11,67 @@
     "dev:electron": "wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .",
     "build": "tsc -b && vite build",
     "build:server": "tsc -p tsconfig.server.json",
-    "build:electron": "tsc -p tsconfig.electron.json",
-    "dist": "npm run build && npm run build:server && npm run build:electron && electron-builder --win --publish never",
+    "build:electron": "tsc -p tsconfig.electron.json && npm run copy:electron-assets",
+    "copy:electron-assets": "node -e \"require('fs').copyFileSync('electron/loading.html','electron-out/electron/loading.html')\"",
+    "clean:release": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean-release.ps1",
+    "predist": "npm run clean:release",
+    "dist": "npm run build && npm run build:server && npm run build:electron && npm run electron:rebuild && electron-builder --win --publish never",
     "electron:rebuild": "electron-rebuild -f -w better-sqlite3",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e:chromium": "python scripts/comprehensive_v1_0_0_test.py --browser=chromium",
+    "test:e2e:firefox": "python scripts/comprehensive_v1_0_0_test.py --browser=firefox",
+    "test:e2e:webkit": "python scripts/comprehensive_v1_0_0_test.py --browser=webkit",
+    "test:e2e:all": "python scripts/comprehensive_v1_0_0_test.py --browser=all",
+    "test:visual": "python scripts/visual_browser_smoke.py --headed"
   },
   "dependencies": {
     "@fastify/compress": "^8.0.0",
     "@fastify/cors": "^11.0.0",
+    "@fastify/multipart": "^10.0.0",
     "@fastify/static": "^8.0.0",
-    "@radix-ui/react-checkbox": "^1.3.5",
+    "@icon-park/react": "^1.4.2",
     "@radix-ui/react-context-menu": "^2.3.1",
     "@radix-ui/react-dialog": "^1.1.17",
     "@radix-ui/react-label": "^2.1.10",
     "@radix-ui/react-scroll-area": "^1.2.12",
-    "@radix-ui/react-select": "^2.3.1",
     "@radix-ui/react-separator": "^1.1.10",
-    "@radix-ui/react-slider": "^1.4.1",
     "@radix-ui/react-slot": "^1.3.0",
-    "@radix-ui/react-switch": "^1.3.1",
-    "@radix-ui/react-tabs": "^1.1.15",
     "@radix-ui/react-tooltip": "^1.2.10",
     "@tanstack/react-query": "^5.101.0",
+    "@types/archiver": "^8.0.0",
+    "archiver": "^8.0.0",
     "better-sqlite3": "^12.11.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
     "d3": "^7.9.0",
     "drizzle-orm": "^0.44.0",
+    "electron-updater": "^6.8.9",
     "fastify": "^5.0.0",
     "fastify-plugin": "^6.0.0",
     "framer-motion": "^11.18.2",
+    "i18next": "^26.3.1",
+    "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^1.18.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.8",
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
+    "sharp": "^0.35.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
+    "tdesign-icons-react": "^0.6.4",
+    "tdesign-react": "^1.17.1",
     "uuid": "^11.0.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
     "@tailwindcss/vite": "^4.3.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/better-sqlite3": "^7.6.0",
     "@types/d3": "^7.4.3",
     "@types/node": "^22.0.0",
@@ -67,6 +85,7 @@
     "drizzle-kit": "^0.31.0",
     "electron": "^42.4.0",
     "electron-builder": "^26.15.3",
+    "jsdom": "^29.1.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.3.1",
     "tsx": "^4.19.0",
@@ -77,9 +96,9 @@
   },
   "build": {
     "appId": "com.ai.timeline-creator",
-    "productName": "AI Timeline Creator",
+    "productName": "Storyloom",
     "directories": {
-      "output": "release/dist"
+      "output": "${env.ATC_DIST_DIR}"
     },
     "files": [
       "dist/**/*",
@@ -91,6 +110,14 @@
     ],
     "asarUnpack": [
       "node_modules/better-sqlite3/**/*"
+    ],
+    "electronDist": "node_modules/electron/dist",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "YJLZSL",
+        "repo": "Storyloom"
+      }
     ],
     "win": {
       "target": "nsis",

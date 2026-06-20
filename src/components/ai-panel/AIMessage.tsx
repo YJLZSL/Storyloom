@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, User, AlertTriangle } from 'lucide-react';
+import { RobotIcon, UserIcon, CautionIcon } from '@/lib/icons';
 import type { AIChatMessage } from './useAIConversations';
 
 interface AIMessageProps {
@@ -22,7 +22,7 @@ export const AIMessage = memo(function AIMessage({ message, isStreaming }: AIMes
     <div className={`ai-message flex gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {isAssistant && (
         <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-1">
-          <Bot className="w-3.5 h-3.5 text-primary" />
+          <RobotIcon size={16} className="text-primary" />
         </div>
       )}
 
@@ -131,7 +131,7 @@ export const AIMessage = memo(function AIMessage({ message, isStreaming }: AIMes
         {/* 降级错误提示 */}
         {message.degraded && message.error && (
           <div className="mt-1 flex items-center gap-1 px-2 py-1 rounded text-[11px] bg-yellow-500/10 border border-yellow-500/20 text-yellow-700 dark:text-yellow-400">
-            <AlertTriangle className="w-3 h-3 shrink-0" />
+            <CautionIcon size={12} className="shrink-0" />
             <span className="break-all">{message.error}</span>
           </div>
         )}
@@ -141,7 +141,7 @@ export const AIMessage = memo(function AIMessage({ message, isStreaming }: AIMes
 
       {isUser && (
         <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shrink-0 mt-1">
-          <User className="w-3.5 h-3.5 text-secondary-foreground" />
+          <UserIcon size={16} className="text-secondary-foreground" />
         </div>
       )}
     </div>

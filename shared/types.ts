@@ -106,6 +106,7 @@ export interface Foreshadowing {
   status: string;
   plantedEventId: string | null;
   resolvedEventId: string | null;
+  relatedForeshadowingIds?: string[];  // 关联伏笔 ID 列表（API 返回时附带）
   createdAt: Date;
   updatedAt: Date;
 }
@@ -126,6 +127,304 @@ export interface AutoSave {
   workspaceId: string;
   dataJson: string;
   createdAt: Date;
+}
+
+/** 大纲版本（细纲演进历史） */
+export interface OutlineVersion {
+  id: string;
+  workspaceId: string;
+  content: string;
+  description: string | null;
+  createdAt: Date;
+}
+
+/** 创建大纲版本请求 */
+export interface CreateOutlineVersionRequest {
+  id?: string;
+  content: string;
+  description?: string;
+}
+
+// --- 视觉小说数据模型类型 (v1.2) ---
+
+/** 节拍类型 */
+export type BeatKind = 'line' | 'choice' | 'jump' | 'sfx' | 'anim';
+
+/** 资产类型 */
+export type AssetKind = 'avatar' | 'portrait' | 'scene' | 'map' | 'bgm' | 'sfx';
+
+/** 角色资产角色 */
+export type CharacterAssetRole = 'avatar' | 'portrait_default' | 'portrait_smile' | 'portrait_sad' | 'portrait_angry' | 'portrait_surprise';
+
+/** 事件资产角色 */
+export type EventAssetRole = 'scene_thumb' | 'reference';
+
+/** 场景资产角色 */
+export type SceneAssetRole = 'background' | 'overlay' | 'bgm';
+
+/** 资产 */
+export interface Asset {
+  id: string;
+  workspaceId: string;
+  kind: AssetKind;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  sha256: string;
+  width: number | null;
+  height: number | null;
+  metadataJson: string | null;
+  createdAt: Date;
+}
+
+/** 地图 */
+export interface StoryMap {
+  id: string;
+  workspaceId: string;
+  name: string;
+  backgroundAssetId: string | null;
+  width: number;
+  height: number;
+  markersJson: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** 地图标记点 */
+export interface MapMarker {
+  id: string;
+  x: number;
+  y: number;
+  label: string;
+  sceneId: string | null;
+  eventId: string | null;
+  iconKey: string;
+}
+
+/** 场景 */
+export interface Scene {
+  id: string;
+  workspaceId: string;
+  name: string;
+  backgroundAssetId: string | null;
+  bgm: string | null;
+  sceneOrder: number;
+  mapId: string | null;
+  settingsJson: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** 节拍（场景内最小叙事单元） */
+export interface Beat {
+  id: string;
+  sceneId: string;
+  kind: BeatKind;
+  characterId: string | null;
+  portraitAssetId: string | null;
+  text: string | null;
+  metadataJson: string | null;
+  beatOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** 选项 */
+export interface Choice {
+  id: string;
+  beatId: string;
+  label: string;
+  nextSceneId: string | null;
+  condition: string | null;
+  choiceOrder: number;
+}
+
+/** 标志变量 */
+export interface Flag {
+  id: string;
+  workspaceId: string;
+  name: string;
+  defaultValueJson: string | null;
+  description: string | null;
+}
+
+/** 角色-资产关联 */
+export interface CharacterAsset {
+  characterId: string;
+  assetId: string;
+  role: string;
+  displayOrder: number;
+}
+
+/** 事件-资产关联 */
+export interface EventAsset {
+  eventId: string;
+  assetId: string;
+  role: string;
+}
+
+/** 场景-资产关联 */
+export interface SceneAsset {
+  sceneId: string;
+  assetId: string;
+  role: string;
+}
+
+/** 操作历史修订记录 */
+export type RevisionOp = 'create' | 'update' | 'delete';
+
+export interface Revision {
+  id: string;
+  workspaceId: string;
+  entityType: string;
+  entityId: string;
+  op: RevisionOp;
+  beforeJson: string | null;
+  afterJson: string | null;
+  summary: string | null;
+  createdAt: Date;
+}
+
+/** 创建修订记录请求 */
+export interface CreateRevisionRequest {
+  entityType: string;
+  entityId: string;
+  op: RevisionOp;
+  beforeJson?: string;
+  afterJson?: string;
+  summary?: string;
+}
+
+// --- 视觉小说 API 请求类型 ---
+
+/** 创建资产请求（元数据，物理文件通过 multipart 上传） */
+export interface CreateAssetRequest {
+  id?: string;
+  kind: AssetKind;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  sha256: string;
+  width?: number;
+  height?: number;
+  metadataJson?: string;
+}
+
+/** 创建地图请求 */
+export interface CreateMapRequest {
+  id?: string;
+  name: string;
+  backgroundAssetId?: string | null;
+  width?: number;
+  height?: number;
+  markersJson?: string;
+}
+
+/** 更新地图请求 */
+export interface UpdateMapRequest {
+  name?: string;
+  backgroundAssetId?: string | null;
+  width?: number;
+  height?: number;
+  markersJson?: string;
+}
+
+/** 创建场景请求 */
+export interface CreateSceneRequest {
+  id?: string;
+  name: string;
+  backgroundAssetId?: string | null;
+  bgm?: string;
+  sceneOrder?: number;
+  mapId?: string | null;
+  settingsJson?: string;
+}
+
+/** 更新场景请求 */
+export interface UpdateSceneRequest {
+  name?: string;
+  backgroundAssetId?: string | null;
+  bgm?: string;
+  sceneOrder?: number;
+  mapId?: string | null;
+  settingsJson?: string;
+}
+
+/** 创建节拍请求 */
+export interface CreateBeatRequest {
+  id?: string;
+  kind: BeatKind;
+  characterId?: string | null;
+  portraitAssetId?: string | null;
+  text?: string;
+  metadataJson?: string;
+  beatOrder?: number;
+}
+
+/** 更新节拍请求 */
+export interface UpdateBeatRequest {
+  kind?: BeatKind;
+  characterId?: string | null;
+  portraitAssetId?: string | null;
+  text?: string;
+  metadataJson?: string;
+  beatOrder?: number;
+}
+
+/** 创建选项请求 */
+export interface CreateChoiceRequest {
+  id?: string;
+  label: string;
+  nextSceneId?: string | null;
+  condition?: string;
+  choiceOrder?: number;
+}
+
+/** 更新选项请求 */
+export interface UpdateChoiceRequest {
+  label?: string;
+  nextSceneId?: string | null;
+  condition?: string;
+  choiceOrder?: number;
+}
+
+/** 创建标志变量请求 */
+export interface CreateFlagRequest {
+  id?: string;
+  name: string;
+  defaultValueJson?: string;
+  description?: string;
+}
+
+/** 更新标志变量请求 */
+export interface UpdateFlagRequest {
+  name?: string;
+  defaultValueJson?: string;
+  description?: string;
+}
+
+/** 批量排序请求 */
+export interface ReorderRequest {
+  items: Array<{ id: string; order: number }>;
+}
+
+/** 角色资产绑定请求 */
+export interface BindCharacterAssetRequest {
+  assetId: string;
+  role: string;
+  displayOrder?: number;
+}
+
+/** 事件资产绑定请求 */
+export interface BindEventAssetRequest {
+  assetId: string;
+  role: string;
+}
+
+/** 场景资产绑定请求 */
+export interface BindSceneAssetRequest {
+  assetId: string;
+  role: string;
 }
 
 // --- API 请求/响应类型 ---
@@ -284,6 +583,7 @@ export interface CreateForeshadowingRequest {
   status?: ForeshadowingStatus;
   plantedEventId?: string | null;
   resolvedEventId?: string | null;
+  relatedForeshadowingIds?: string[];
 }
 
 /** 更新伏笔请求 */
@@ -293,6 +593,7 @@ export interface UpdateForeshadowingRequest {
   status?: ForeshadowingStatus;
   plantedEventId?: string | null;
   resolvedEventId?: string | null;
+  relatedForeshadowingIds?: string[];
 }
 
 /** 创建世界观设定请求 */
@@ -345,6 +646,17 @@ export interface ExportData {
   connections: Record<string, unknown>[];
   foreshadowings: Record<string, unknown>[];
   worldSettings: Record<string, unknown>[];
+  outlineVersions?: Record<string, unknown>[];
+  // 视觉小说数据 (v1.2)
+  scenes?: Record<string, unknown>[];
+  beats?: Record<string, unknown>[];
+  choices?: Record<string, unknown>[];
+  flags?: Record<string, unknown>[];
+  maps?: Record<string, unknown>[];
+  assets?: Record<string, unknown>[];
+  characterAssets?: Record<string, unknown>[];
+  eventAssets?: Record<string, unknown>[];
+  sceneAssets?: Record<string, unknown>[];
   exportedAt: number;
 }
 
@@ -357,5 +669,9 @@ export interface HealthCheckResponse {
     walMode: boolean;
     integrity: boolean;
     workspaceCount: number;
+  };
+  dbStats?: {
+    walMode: string;
+    userVersion: number;
   };
 }

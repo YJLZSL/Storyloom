@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* ===== TDesign 兼容性说明 =====
+ * TDesign 全局样式（tdesign-react/es/style/index.css）在 main.tsx 中先于本文件加载，
+ * 仅含 --td-* 设计令牌与 .t-* 局部类，无全局元素重置，与 Tailwind v4（-- 前缀）及
+ * 项目自有令牌（--background 等）命名空间互不冲突；Tailwind 在后加载，工具类可正常覆盖。
+ * 若后续引入 TDesign 组件级样式与 shadcn/ui 冲突，可用 @layer 将其归入独立层级隔离。
+ */
+
 /* ===== 设计令牌系统 ===== */
 @theme {
   /* 字体 */
@@ -25,67 +32,246 @@
   --duration-fast: 150ms;
   --duration-normal: 250ms;
   --duration-slow: 400ms;
+
+  /* z-index 分层令牌（统一所有浮层层级，避免冲突） */
+  --z-content: 1;
+  --z-toolbar: 30;
+  --z-sidenav: 30;
+  --z-overlay: 40;
+  --z-dialog: 50;
+  --z-popover: 60;
+  --z-toast: 70;
+
+  /* 时间轴 zoom 基准 token（与 --zoom 变量联动） */
+  --timeline-track-height: 80px;
+  --timeline-track-gap: 8px;
+  --timeline-header-width: 200px;
+  --timeline-base-font-size: 12px;
+  --timeline-ruler-height: 40px;
+  --timeline-ruler-tick-height: 20px;
+  --timeline-minor-tick-height: 8px;
+
+  /* ===== Tailwind v4 色彩桥接 =====
+   * shadcn/ui 组件使用 bg-background / text-foreground 等 utility class，
+   * Tailwind v4 要求对应的 CSS 变量名带 --color- 前缀。
+   * 以下别名将裸名变量（--background 等）桥接到 Tailwind v4 命名空间。
+   */
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-destructive: rgb(var(--destructive));
+  --color-destructive-foreground: rgb(var(--destructive-foreground));
+  --color-border: rgb(var(--border));
+  --color-input: rgb(var(--input));
+  --color-ring: rgb(var(--ring));
 }
 
-/* ===== 主题：素纸（亮色） ===== */
-:root {
-  /* 背景层 */
-  --background: 250 248 245;      /* #FAF8F5 暖白 */
-  --card: 255 255 255;            /* #FFFFFF 纯白卡片 */
-  --muted: 245 242 237;           /* #F5F2ED 次要背景 */
+/* ===== 主题：洛圣（暖米色） ===== */
+:root,
+[data-theme="luosheng"] {
+  --background: 250 246 237;      /* #FAF6ED 暖米色 */
+  --card: 255 253 248;            /* #FFFDF8 米白卡片 */
+  --muted: 244 240 232;           /* #F4F0E8 次要背景 */
+  --popover: 255 253 248;
+  --popover-foreground: 26 26 26;
 
-  /* 文字层 */
   --foreground: 26 26 26;         /* #1A1A1A 墨色 */
-  --muted-foreground: 115 115 115; /* #737373 次要文字 */
+  --muted-foreground: 115 115 115;
   --card-foreground: 26 26 26;
 
-  /* 边框 */
-  --border: 234 230 222;          /* #EAE6DE */
-  --input: 234 230 222;
-  --ring: 59 91 219;              /* #3B5BDB 靛青 */
+  --border: 232 224 208;          /* #E8E0D0 */
+  --input: 232 224 208;
+  --ring: 184 134 11;             /* #B8860B 暗金 */
 
-  /* 强调色 */
-  --primary: 59 91 219;           /* #3B5BDB 靛青 */
+  --primary: 184 134 11;          /* #B8860B */
   --primary-foreground: 255 255 255;
-  --secondary: 245 242 237;
+  --secondary: 244 240 232;
   --secondary-foreground: 26 26 26;
-  --accent: 59 91 219;
+  --accent: 184 134 11;
   --accent-foreground: 255 255 255;
 
-  /* 状态色 */
-  --destructive: 220 38 38;       /* #DC2626 红 */
+  --destructive: 220 38 38;
   --destructive-foreground: 255 255 255;
-  --success: 22 163 74;           /* #16A34A 绿 */
-  --warning: 217 119 6;           /* #D97706 橙 */
-  --info: 59 130 246;             /* #3B82F6 蓝 */
+  --success: 22 163 74;
+  --warning: 217 119 6;
+  --info: 59 130 246;
+
+  --theme-shadow-intensity: 0.1;
+  --theme-font-weight: 400;
+  --theme-texture: radial-gradient(circle at 20% 20%, rgb(184 134 11 / 0.03) 0%, transparent 50%),
+                   radial-gradient(circle at 80% 80%, rgb(160 82 45 / 0.02) 0%, transparent 40%),
+                   linear-gradient(to bottom, rgb(0 0 0 / 0.01) 1px, transparent 1px);
+  --theme-texture-size: 100% 100%, 100% 100%, 100% 24px;
+  background-image: var(--theme-texture);
+  background-size: var(--theme-texture-size);
 }
 
-/* ===== 主题：墨黑（暗色） ===== */
-.dark {
-  --background: 22 22 22;         /* #161616 深灰 */
-  --card: 30 30 30;               /* #1E1E1E 卡片 */
-  --muted: 38 38 38;              /* #262626 */
+/* ===== 主题：子夜（深蓝星空） ===== */
+.dark,
+[data-theme="midnight"] {
+  --background: 15 23 42;         /* #0F172A 深蓝 */
+  --card: 30 41 59;               /* #1E293B 卡片 */
+  --muted: 30 41 59;
+  --popover: 30 41 59;
+  --popover-foreground: 226 232 240;
 
-  --foreground: 232 230 225;      /* #E8E6E1 暖白 */
-  --muted-foreground: 163 163 163; /* #A3A3A3 */
-  --card-foreground: 232 230 225;
+  --foreground: 226 232 240;      /* #E8E8F0 亮白 */
+  --muted-foreground: 148 163 184;
+  --card-foreground: 226 232 240;
 
-  --border: 51 51 51;             /* #333333 */
-  --input: 51 51 51;
-  --ring: 107 138 255;            /* #6B8AFF 亮靛青 */
+  --border: 51 65 85;             /* #334155 */
+  --input: 51 65 85;
+  --ring: 56 189 248;             /* #38BDF8 天蓝 */
 
-  --primary: 107 138 255;         /* #6B8AFF */
-  --primary-foreground: 22 22 22;
-  --secondary: 38 38 38;
-  --secondary-foreground: 232 230 225;
-  --accent: 107 138 255;
-  --accent-foreground: 22 22 22;
+  --primary: 56 189 248;          /* #38BDF8 */
+  --primary-foreground: 15 23 42;
+  --secondary: 30 41 59;
+  --secondary-foreground: 226 232 240;
+  --accent: 56 189 248;
+  --accent-foreground: 15 23 42;
 
   --destructive: 248 113 113;
-  --destructive-foreground: 22 22 22;
+  --destructive-foreground: 15 23 42;
   --success: 74 222 128;
   --warning: 251 191 36;
   --info: 96 165 250;
+
+  --theme-shadow-intensity: 0.2;
+  --theme-font-weight: 400;
+  --theme-texture: radial-gradient(circle at 10% 20%, rgb(56 189 248 / 0.15) 0%, transparent 2%),
+                   radial-gradient(circle at 30% 60%, rgb(255 255 255 / 0.1) 0%, transparent 1.5%),
+                   radial-gradient(circle at 70% 40%, rgb(56 189 248 / 0.12) 0%, transparent 2%),
+                   radial-gradient(circle at 85% 80%, rgb(255 255 255 / 0.08) 0%, transparent 1.5%),
+                   radial-gradient(circle at 50% 50%, rgb(56 189 248 / 0.05) 0%, transparent 60%);
+  --theme-texture-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-image: var(--theme-texture);
+  background-size: var(--theme-texture-size);
+}
+
+/* ===== 主题：森林（淡绿手稿） ===== */
+[data-theme="forest"] {
+  --background: 232 240 226;      /* #E8F0E2 淡绿 */
+  --card: 244 249 240;            /* #F4F9F0 */
+  --muted: 220 232 213;           /* #DCE8D5 */
+  --popover: 244 249 240;
+  --popover-foreground: 28 46 28;
+
+  --foreground: 28 46 28;         /* #1C2E1C 深绿黑 */
+  --muted-foreground: 86 110 86;
+  --card-foreground: 28 46 28;
+
+  --border: 198 218 188;          /* #C6DABC */
+  --input: 198 218 188;
+  --ring: 47 122 65;              /* #2F7A41 深绿 */
+
+  --primary: 47 122 65;           /* #2F7A41 */
+  --primary-foreground: 255 255 255;
+  --secondary: 220 232 213;
+  --secondary-foreground: 28 46 28;
+  --accent: 47 122 65;
+  --accent-foreground: 255 255 255;
+
+  --destructive: 185 28 28;
+  --destructive-foreground: 255 255 255;
+  --success: 21 128 61;
+  --warning: 161 98 7;
+  --info: 29 78 216;
+
+  --theme-shadow-intensity: 0.1;
+  --theme-font-weight: 400;
+  --theme-texture: radial-gradient(circle at 15% 25%, rgb(47 122 65 / 0.06) 0%, transparent 35%),
+                   radial-gradient(circle at 85% 75%, rgb(47 122 65 / 0.05) 0%, transparent 40%),
+                   linear-gradient(135deg, rgb(47 122 65 / 0.02) 25%, transparent 25%, transparent 50%, rgb(47 122 65 / 0.02) 50%, rgb(47 122 65 / 0.02) 75%, transparent 75%);
+  --theme-texture-size: 100% 100%, 100% 100%, 40px 40px;
+  background-image: var(--theme-texture);
+  background-size: var(--theme-texture-size);
+}
+
+/* ===== 主题：水墨（灰白晕染） ===== */
+[data-theme="ink-wash"] {
+  --background: 245 245 240;      /* #F5F5F0 灰白 */
+  --card: 255 255 255;            /* #FFFFFF */
+  --muted: 235 235 230;           /* #EBEBE6 */
+  --popover: 255 255 255;
+  --popover-foreground: 26 26 26;
+
+  --foreground: 26 26 26;         /* #1A1A1A */
+  --muted-foreground: 115 115 115;
+  --card-foreground: 26 26 26;
+
+  --border: 212 212 208;          /* #D4D4D0 */
+  --input: 212 212 208;
+  --ring: 26 26 26;               /* #1A1A1A */
+
+  --primary: 26 26 26;            /* #1A1A1A 墨黑 */
+  --primary-foreground: 255 255 255;
+  --secondary: 235 235 230;
+  --secondary-foreground: 26 26 26;
+  --accent: 80 80 80;
+  --accent-foreground: 255 255 255;
+
+  --destructive: 220 38 38;
+  --destructive-foreground: 255 255 255;
+  --success: 22 163 74;
+  --warning: 180 83 9;
+  --info: 37 99 235;
+
+  --theme-shadow-intensity: 0.1;
+  --theme-font-weight: 500;
+  --theme-texture: radial-gradient(ellipse at 20% 30%, rgb(0 0 0 / 0.03) 0%, transparent 45%),
+                   radial-gradient(ellipse at 75% 20%, rgb(0 0 0 / 0.02) 0%, transparent 35%),
+                   radial-gradient(ellipse at 60% 80%, rgb(0 0 0 / 0.025) 0%, transparent 50%),
+                   linear-gradient(to bottom, rgb(0 0 0 / 0.01) 1px, transparent 1px);
+  --theme-texture-size: 100% 100%, 100% 100%, 100% 100%, 100% 32px;
+  background-image: var(--theme-texture);
+  background-size: var(--theme-texture-size);
+}
+
+/* ===== 主题：高对比（纯黑底白字） ===== */
+[data-theme="contrast"] {
+  --background: 0 0 0;            /* #000000 */
+  --card: 10 10 10;               /* #0A0A0A */
+  --muted: 26 26 26;              /* #1A1A1A */
+  --popover: 10 10 10;
+  --popover-foreground: 255 255 255;
+
+  --foreground: 255 255 255;      /* #FFFFFF */
+  --muted-foreground: 224 224 224;
+  --card-foreground: 255 255 255;
+
+  --border: 255 255 255;          /* #FFFFFF */
+  --input: 255 255 255;
+  --ring: 255 255 0;              /* #FFFF00 */
+
+  --primary: 255 255 0;           /* #FFFF00 */
+  --primary-foreground: 0 0 0;
+  --secondary: 26 26 26;
+  --secondary-foreground: 255 255 255;
+  --accent: 51 51 51;
+  --accent-foreground: 255 255 255;
+
+  --destructive: 255 99 99;
+  --destructive-foreground: 0 0 0;
+  --success: 0 255 128;
+  --warning: 255 191 0;
+  --info: 102 204 255;
+
+  --theme-shadow-intensity: 0;
+  --theme-font-weight: 500;
+  --theme-texture: none;
+  --theme-texture-size: auto;
+  background-image: none;
 }
 
 /* ===== 基础样式 ===== */
@@ -95,10 +281,24 @@
 
 body {
   background-color: rgb(var(--background));
+  background-image: var(--theme-texture);
+  background-size: var(--theme-texture-size);
   color: rgb(var(--foreground));
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* 全局选区配色 */
+::selection {
+  background-color: rgb(var(--primary) / 0.25);
+  color: rgb(var(--foreground));
+}
+
+/* 全局聚焦环 */
+:focus-visible {
+  outline: 2px solid rgb(var(--primary) / 0.5);
+  outline-offset: 2px;
 }
 
 /* ===== 专注模式 ===== */
@@ -124,6 +324,398 @@ body {
   to {
     clip-path: circle(var(--theme-transition-radius, 150%) at var(--theme-transition-x, 50%) var(--theme-transition-y, 50%));
   }
+}
+
+/* ===== TDesign 主题补丁 =====
+ * 将 TDesign 组件的样式与 Storyloom 设计系统对齐。
+ * 这些补丁在 TDesign 全局样式之后加载，优先级更高。
+ */
+
+/* 按钮：统一高度、圆角、聚焦环 */
+.t-button {
+  border-radius: var(--radius-md);
+  font-weight: var(--theme-font-weight, 400);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.t-button--variant-base.t-button--theme-primary {
+  background-color: rgb(var(--primary));
+  color: rgb(var(--primary-foreground));
+}
+
+.t-button--variant-base.t-button--theme-primary:hover {
+  background-color: rgb(var(--primary) / 0.9);
+}
+
+.t-button--variant-base.t-button--theme-success {
+  background-color: rgb(var(--success));
+  color: #ffffff;
+}
+
+.t-button--variant-base.t-button--theme-success:hover {
+  background-color: rgb(var(--success) / 0.9);
+}
+
+.t-button--variant-outline,
+.t-button--variant-dashed {
+  border-color: rgb(var(--border));
+  color: rgb(var(--foreground));
+}
+
+.t-button--variant-text {
+  color: rgb(var(--muted-foreground));
+}
+
+.t-button--variant-text:hover {
+  color: rgb(var(--foreground));
+  background-color: rgb(var(--muted));
+}
+
+.t-button--size-small {
+  height: 28px;
+  padding: 0 8px;
+}
+
+/* 输入框、选择器：背景与边框 */
+.t-input,
+.t-textarea,
+.t-select,
+.t-select-input,
+.t-date-picker {
+  border-radius: var(--radius-md);
+}
+
+.t-input__inner,
+.t-textarea__inner,
+.t-select-input .t-input__inner {
+  background-color: rgb(var(--card));
+  color: rgb(var(--foreground));
+  border-color: rgb(var(--border));
+}
+
+.t-input:hover .t-input__inner,
+.t-textarea:hover .t-textarea__inner,
+.t-select-input:hover .t-input__inner {
+  border-color: rgb(var(--primary) / 0.5);
+}
+
+.t-input.t-is-focused .t-input__inner,
+.t-textarea.t-is-focused .t-textarea__inner,
+.t-select-input.t-is-focused .t-input__inner {
+  border-color: rgb(var(--primary));
+  box-shadow: 0 0 0 2px rgb(var(--primary) / 0.15);
+}
+
+.t-input__prefix-icon,
+.t-input__suffix-icon {
+  color: rgb(var(--muted-foreground));
+}
+
+/* 标签与徽章 */
+.t-tag,
+.t-badge {
+  border-radius: var(--radius-sm);
+}
+
+.t-tag.t-tag--theme-primary {
+  background-color: rgb(var(--primary) / 0.12);
+  color: rgb(var(--primary));
+}
+
+.t-tag.t-tag--theme-success {
+  background-color: rgb(var(--success) / 0.12);
+  color: rgb(var(--success));
+}
+
+.t-tag.t-tag--theme-warning {
+  background-color: rgb(var(--warning) / 0.12);
+  color: rgb(var(--warning));
+}
+
+.t-tag.t-tag--theme-danger {
+  background-color: rgb(var(--destructive) / 0.12);
+  color: rgb(var(--destructive));
+}
+
+/* 滑块（提高选择器优先级以覆盖组件级样式） */
+.t-slider {
+  width: 100%;
+  min-width: 80px;
+}
+
+.t-slider .t-slider__rail {
+  width: 100%;
+  height: 4px;
+  background-color: rgb(var(--muted));
+  border-radius: 2px;
+}
+
+.t-slider .t-slider__track {
+  height: 4px;
+  background-color: rgb(var(--primary));
+  border-radius: 2px;
+}
+
+.t-slider .t-slider__button {
+  width: 14px;
+  height: 14px;
+  border-color: rgb(var(--primary));
+  background-color: rgb(var(--card));
+}
+
+/* 开关（提高选择器优先级以覆盖组件级样式） */
+.t-switch:not(.t-is-checked) {
+  background-color: rgb(var(--muted-foreground) / 0.35);
+}
+
+.t-switch:not(.t-is-checked):hover {
+  background-color: rgb(var(--muted-foreground) / 0.45);
+}
+
+.t-switch.t-is-checked {
+  background-color: rgb(var(--success));
+}
+
+.t-switch.t-is-checked:hover {
+  background-color: rgb(var(--success) / 0.9);
+}
+
+.t-switch .t-switch__handle {
+  background-color: rgb(var(--card));
+}
+
+/* 卡片 */
+.t-card {
+  background-color: rgb(var(--card));
+  border-color: rgb(var(--border));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.t-card__title {
+  color: rgb(var(--foreground));
+}
+
+/* 菜单（用于 SideNav） */
+.t-menu {
+  background-color: transparent;
+}
+
+.t-menu__item,
+.t-menu__item-spacer {
+  border-radius: var(--radius-md);
+  color: rgb(var(--muted-foreground));
+}
+
+.t-menu__item:hover,
+.t-menu__item.t-is-opened {
+  background-color: rgb(var(--muted));
+  color: rgb(var(--foreground));
+}
+
+.t-menu__item.t-is-active {
+  background-color: rgb(var(--primary) / 0.12);
+  color: rgb(var(--primary));
+}
+
+.t-menu__item.t-is-active:hover {
+  background-color: rgb(var(--primary) / 0.18);
+}
+
+.t-menu__item .t-icon {
+  color: currentColor;
+}
+
+.t-menu__operations .t-button,
+.t-menu__operations .t-icon {
+  color: rgb(var(--muted-foreground));
+}
+
+.t-menu__operations .t-button:hover,
+.t-menu__operations .t-icon:hover {
+  color: rgb(var(--foreground));
+}
+
+.t-menu__popup {
+  background-color: rgb(var(--card));
+  border: 1px solid rgb(var(--border));
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.t-menu__popup .t-menu__item {
+  color: rgb(var(--muted-foreground));
+}
+
+.t-menu__popup .t-menu__item:hover,
+.t-menu__popup .t-menu__item.t-is-active {
+  color: rgb(var(--foreground));
+  background-color: rgb(var(--muted));
+}
+
+.t-menu__popup .t-menu__item.t-is-active {
+  color: rgb(var(--primary));
+  background-color: rgb(var(--primary) / 0.12);
+}
+
+/* Tab 标签 */
+.t-tabs {
+  color: rgb(var(--foreground));
+}
+
+.t-tabs__nav-container {
+  background-color: transparent;
+}
+
+.t-tabs__nav-item {
+  border-radius: var(--radius-md);
+  color: rgb(var(--muted-foreground));
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.t-tabs__nav-item:hover {
+  color: rgb(var(--foreground));
+  background-color: rgb(var(--muted));
+}
+
+.t-tabs__nav-item.t-is-active {
+  color: rgb(var(--primary));
+  background-color: rgb(var(--primary) / 0.08);
+}
+
+.t-tabs__bar {
+  background-color: rgb(var(--primary));
+}
+
+.t-tabs__content {
+  color: rgb(var(--foreground));
+}
+
+/* Toolbar tabs 紧凑模式 */
+.toolbar-tabs.t-tabs {
+  height: 100%;
+}
+
+.toolbar-tabs .t-tabs__header,
+.toolbar-tabs .t-tabs__nav-container,
+.toolbar-tabs .t-tabs__nav-wrap,
+.toolbar-tabs .t-tabs__nav {
+  height: 100% !important;
+}
+
+.toolbar-tabs .t-tabs__nav-item {
+  height: 28px;
+  line-height: 28px;
+}
+
+.toolbar-tabs .t-tabs__content {
+  display: none;
+}
+
+/* 弹窗 */
+.t-dialog {
+  border-radius: var(--radius-lg);
+  background-color: rgb(var(--card));
+  border: 1px solid rgb(var(--border));
+  box-shadow: var(--shadow-xl);
+}
+
+.t-dialog__header {
+  color: rgb(var(--foreground));
+  border-bottom: 1px solid rgb(var(--border));
+}
+
+.t-dialog__body {
+  color: rgb(var(--foreground));
+}
+
+.t-dialog__footer {
+  border-top: 1px solid rgb(var(--border));
+}
+
+.t-dialog__close {
+  color: rgb(var(--muted-foreground));
+}
+
+.t-dialog__close:hover {
+  color: rgb(var(--foreground));
+  background-color: rgb(var(--muted));
+}
+
+.t-dialog__mask {
+  background-color: rgb(var(--background) / 0.75);
+}
+
+/* 抽屉 */
+.t-drawer {
+  background-color: rgb(var(--card));
+  border-radius: var(--radius-lg);
+}
+
+.t-drawer__header {
+  color: rgb(var(--foreground));
+  border-bottom: 1px solid rgb(var(--border));
+}
+
+.t-drawer__body {
+  color: rgb(var(--foreground));
+}
+
+.t-drawer__footer {
+  border-top: 1px solid rgb(var(--border));
+}
+
+.t-drawer__close {
+  color: rgb(var(--muted-foreground));
+}
+
+.t-drawer__close:hover {
+  color: rgb(var(--foreground));
+  background-color: rgb(var(--muted));
+}
+
+.t-drawer__mask {
+  background-color: rgb(var(--background) / 0.75);
+}
+
+/* 列表 */
+.t-list {
+  background-color: transparent;
+  color: rgb(var(--foreground));
+}
+
+.t-list__item {
+  background-color: transparent;
+  border-bottom: 1px solid rgb(var(--border) / 0.5);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.t-list__item:hover {
+  background-color: rgb(var(--muted));
+}
+
+.t-list__item-meta-title {
+  color: rgb(var(--foreground));
+}
+
+.t-list__item-meta-description {
+  color: rgb(var(--muted-foreground));
+}
+
+/* 高对比主题修复 */
+[data-theme="contrast"] .t-button--variant-outline,
+[data-theme="contrast"] .t-button--variant-dashed {
+  border-width: 2px;
+}
+
+[data-theme="contrast"] .t-input__inner,
+[data-theme="contrast"] .t-textarea__inner {
+  border-width: 2px;
+}
+
+/* midnight 主题降低阴影 */
+[data-theme="midnight"] .t-card {
+  box-shadow: none;
 }
 
 /* ===== 滚动条 ===== */

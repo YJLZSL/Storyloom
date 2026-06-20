@@ -1,5 +1,6 @@
 import { useRef, useState, useMemo } from 'react';
-import { Plus, ArrowRight, Pencil, Trash2, X, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { PlusIcon, RightIcon, PencilIcon, DeleteIcon, XIcon, CheckIcon } from '@/lib/icons';
+import { TButton, TTag, TInput } from '@/components/ui-tdesign';
 import {
   useConnections,
   useCreateConnection,
@@ -123,15 +124,15 @@ export function ConnectionPanel() {
     <div className="h-full flex flex-col">
       {/* --- Collapsible Create Form --- */}
       <div className="mb-2 border-b border-border pb-2">
-        <button
-          type="button"
+        <TButton
+          variant="text"
+          size="small"
+          block
           onClick={() => setFormOpen((v) => !v)}
-          className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors w-full"
+          icon={formOpen ? <XIcon size={14} /> : <PlusIcon size={14} />}
         >
-          <Plus className="w-4 h-4" />
-          <span>新建关联</span>
-          {formOpen ? <ChevronUp className="w-3.5 h-3.5 ml-auto" /> : <ChevronDown className="w-3.5 h-3.5 ml-auto" />}
-        </button>
+          {formOpen ? '取消新建' : '新建关联'}
+        </TButton>
 
         {formOpen && (
           <div className="mt-2 space-y-2">
@@ -186,25 +187,25 @@ export function ConnectionPanel() {
             {/* Description */}
             <div>
               <label className="text-xs text-muted-foreground font-sans mb-0.5 block">描述（可选）</label>
-              <textarea
+              <TInput
                 value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
+                onChange={(val) => setNewDescription((val ?? '').toString())}
                 placeholder="输入关联描述..."
-                rows={2}
-                className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 font-sans resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                size="small"
               />
             </div>
 
             {/* Submit */}
-            <button
-              type="button"
+            <TButton
+              theme="primary"
+              size="small"
+              block
               onClick={handleCreate}
               disabled={!sourceEventId || !targetEventId || createMutation.isPending}
-              className="w-full text-xs rounded-md bg-primary text-primary-foreground px-3 py-1.5 font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1"
+              icon={<PlusIcon size={14} />}
             >
-              <Plus className="w-3.5 h-3.5" />
               {createMutation.isPending ? '创建中...' : '创建关联'}
-            </button>
+            </TButton>
           </div>
         )}
       </div>
@@ -230,55 +231,55 @@ export function ConnectionPanel() {
                   <span className="font-medium truncate max-w-[120px]" title={eventMap.get(conn.sourceEventId) ?? conn.sourceEventId}>
                     {sourceTitle}
                   </span>
-                  <ArrowRight className="w-3 h-3 shrink-0 text-muted-foreground" />
-                  <span
-                    className={`text-xs px-1.5 py-0.5 rounded font-sans shrink-0 ${colorClass}`}
-                  >
+                  <RightIcon size={12} className="shrink-0 text-muted-foreground" />
+                  <TTag size="small" variant="light" className={colorClass}>
                     {conn.type}
-                  </span>
-                  <ArrowRight className="w-3 h-3 shrink-0 text-muted-foreground" />
+                  </TTag>
+                  <RightIcon size={12} className="shrink-0 text-muted-foreground" />
                   <span className="font-medium truncate max-w-[120px]" title={eventMap.get(conn.targetEventId) ?? conn.targetEventId}>
                     {targetTitle}
                   </span>
 
                   {/* Action buttons */}
-                  <div className="ml-auto flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
+                  <div className="ml-auto flex items-center gap-0.5 shrink-0">
+                    <TButton
+                      variant="text"
+                      shape="square"
+                      size="small"
                       onClick={() => (isExpanded ? cancelEdit() : startEdit(conn))}
-                      className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                       title={isExpanded ? '收起' : '编辑'}
-                    >
-                      {isExpanded ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                    </button>
+                      icon={isExpanded ? <XIcon size={14} /> : <PencilIcon size={14} />}
+                    />
                     {isConfirmingDelete ? (
                       <div className="flex items-center gap-0.5">
-                        <button
-                          type="button"
+                        <TButton
+                          variant="text"
+                          shape="square"
+                          size="small"
+                          theme="success"
                           onClick={() => handleDelete(conn.id)}
-                          className="p-1 rounded bg-red-500/10 text-red-600 hover:bg-red-500/20 transition-colors"
                           title="确认删除"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
+                          icon={<CheckIcon size={14} />}
+                        />
+                        <TButton
+                          variant="text"
+                          shape="square"
+                          size="small"
                           onClick={() => setConfirmDeleteId(null)}
-                          className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                           title="取消"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
+                          icon={<XIcon size={14} />}
+                        />
                       </div>
                     ) : (
-                      <button
-                        type="button"
+                      <TButton
+                        variant="text"
+                        shape="square"
+                        size="small"
+                        theme="danger"
                         onClick={() => setConfirmDeleteId(conn.id)}
-                        className="p-1 rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-600 transition-colors"
                         title="删除"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        icon={<DeleteIcon size={14} />}
+                      />
                     )}
                   </div>
                 </div>
@@ -311,34 +312,33 @@ export function ConnectionPanel() {
                   {/* Edit description */}
                   <div>
                     <label className="text-xs text-muted-foreground font-sans mb-0.5 block">描述</label>
-                    <textarea
+                    <TInput
                       value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
+                      onChange={(val) => setEditDescription((val ?? '').toString())}
                       placeholder="输入关联描述..."
-                      rows={2}
-                      className="w-full text-xs rounded-md border border-border bg-background px-2 py-1.5 font-sans resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                      size="small"
                     />
                   </div>
 
                   {/* Save / Cancel */}
                   <div className="flex items-center gap-2 pt-1">
-                    <button
-                      type="button"
+                    <TButton
+                      theme="primary"
+                      size="small"
                       onClick={() => handleUpdate(conn)}
                       disabled={updateMutation.isPending}
-                      className="text-xs rounded-md bg-primary text-primary-foreground px-3 py-1 font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center gap-1"
+                      icon={<CheckIcon size={14} />}
                     >
-                      <Check className="w-3.5 h-3.5" />
                       {updateMutation.isPending ? '保存中...' : '保存'}
-                    </button>
-                    <button
-                      type="button"
+                    </TButton>
+                    <TButton
+                      variant="outline"
+                      size="small"
                       onClick={cancelEdit}
-                      className="text-xs rounded-md border border-border px-3 py-1 font-medium hover:bg-accent transition-colors flex items-center gap-1"
+                      icon={<XIcon size={14} />}
                     >
-                      <X className="w-3.5 h-3.5" />
                       取消
-                    </button>
+                    </TButton>
                   </div>
                 </div>
               )}

@@ -1,7 +1,12 @@
-// Electron 环境下使用 localhost:3001，Web 环境下使用相对路径（由 Vite proxy 或 Fastify static 处理）
-const isElectron = typeof window !== 'undefined' && (window as unknown as { electronAPI?: unknown }).electronAPI;
-const API_BASE = (import.meta as unknown as { env: Record<string, string> }).env.VITE_API_BASE
-  || (isElectron ? 'http://localhost:3001' : '');
+// Electron 环境下动态获取服务器端口，Web 环境下使用相对路径（由 Vite proxy 或 Fastify static 处理）
+const isElectron = typeof window !== 'undefined' && window.electronAPI;
+
+const envApiBase = (import.meta as unknown as { env: Record<string, string> }).env.VITE_API_BASE;
+let API_BASE = envApiBase || (isElectron ? 'http://localhost:3001' : '');
+
+export function setApiBase(port: number): void {
+  API_BASE = `http://localhost:${port}`;
+}
 
 export class APIError extends Error {
   constructor(

@@ -4,7 +4,12 @@ node_modules/
 # Build outputs
 dist/
 dist-server/
+electron-out/
 release/
+release-*/
+win-unpacked/
+out-dist/
+*.asar
 
 # Database
 data/*.db
@@ -24,6 +29,8 @@ drizzle/
 # Logs
 *.log
 npm-debug.log*
+server-err.log
+server-out.log
 
 # OS files
 .DS_Store
@@ -33,6 +40,7 @@ desktop.ini
 # Editor files
 .vscode/
 .idea/
+.trae/
 *.swp
 *.swo
 
@@ -49,3 +57,10 @@ v7-*.txt
 # Electron builder
 *.blockmap
 *.nupkg
+
+# Local test install (sandbox-safe)
+test-install/
+
+# Frontend aesthetics audit artifacts (local only)
+.audit-shots/
+audit_frontend.py

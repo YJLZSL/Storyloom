@@ -1,9 +1,11 @@
 import { useCallback } from 'react';
-import { X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { XIcon, MinusIcon, PlusIcon } from '@/lib/icons';
+import { TButton } from '@/components/ui-tdesign';
 import { useUIStore } from '@/stores/useUIStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useSettingsStore } from '@/stores/useSettingsStore';
+import { useSelectionStore } from '@/stores/useSelectionStore';
 import { useEvent } from '@/services/api-hooks';
 import { AIPanel } from '@/components/ai-panel/AIPanel';
 import { EventEditorDialog } from '@/components/events/EventEditorDialog';
@@ -32,8 +34,11 @@ export function ContextPanel() {
   const setPanelWidth = useUIStore((s) => s.setPanelWidth);
   const setActivePanel = useUIStore((s) => s.setActivePanel);
   const setSettingsOpen = useUIStore((s) => s.setSettingsOpen);
-  const selectedEventId = useTimelineStore((s) => s.selectedEventId);
-  const selectedCharacterId = useTimelineStore((s) => s.selectedCharacterId);
+  const selectedEventId = useSelectionStore((s) => s.selectedEventId);
+  const selectedCharacterId = useSelectionStore((s) => s.selectedCharacterId);
+  const viewMode = useTimelineStore((s) => s.viewMode);
+  const outlineFontSize = useSettingsStore((s) => s.outlineFontSize);
+  const setOutlineFontSize = useSettingsStore((s) => s.setOutlineFontSize);
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
   const { data: selectedEvent } = useEvent(workspaceId, selectedEventId);
 
@@ -92,9 +97,42 @@ export function ContextPanel() {
       {/* 标题栏 */}
       <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
         <h2 className="font-serif text-sm font-semibold text-foreground">{title}</h2>
-        <Button variant="ghost" size="icon" className="size-7" onClick={handleClose}>
-          <X className="size-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {viewMode === 'outline' && (
+            <div className="flex items-center gap-1">
+              <TButton
+                variant="text"
+                shape="square"
+                size="small"
+                className="size-7"
+                disabled={outlineFontSize <= 12}
+                onClick={() => setOutlineFontSize(outlineFontSize - 1)}
+                title="减小字号"
+                icon={<MinusIcon size={16} />}
+              />
+              <span className="w-5 text-center text-xs tabular-nums text-muted-foreground">{outlineFontSize}</span>
+              <TButton
+                variant="text"
+                shape="square"
+                size="small"
+                className="size-7"
+                disabled={outlineFontSize >= 24}
+                onClick={() => setOutlineFontSize(outlineFontSize + 1)}
+                title="增大字号"
+                icon={<PlusIcon size={16} />}
+              />
+            </div>
+          )}
+          <TButton
+            variant="text"
+            shape="square"
+            size="small"
+            className="size-7"
+            onClick={handleClose}
+            icon={<XIcon size={16} />}
+            title="关闭"
+          />
+        </div>
       </div>
 
       {/* 面板内容 */}
@@ -129,9 +167,9 @@ function ShortcutSettingsPanel({ onOpen }: { onOpen: () => void }) {
       <p className="text-center text-sm text-muted-foreground">
         点击下方按钮打开快捷键设置对话框
       </p>
-      <Button variant="outline" size="sm" onClick={onOpen}>
+      <TButton variant="outline" size="small" onClick={onOpen}>
         打开快捷键设置
-      </Button>
+      </TButton>
     </div>
   );
 }
@@ -157,7 +195,7 @@ function getPanelContent(
         return { title: '事件编辑器', content: <EventEditorDialog event={selectedEvent} onClose={onClose} /> };
       }
       if (selectedCharacterId) {
-        return { title: '角色详情', content: <Placeholder label="角色详情 — 后续任务实现" /> };
+        return { title: '角色详情', content: <Placeholder label="请在角色面板中查看和编辑角色详情" /> };
       }
       return { title: '属性', content: <EmptyState /> };
 

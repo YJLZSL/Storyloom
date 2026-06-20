@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+// CLI / standalone migration script — console output goes to terminal
 import fs from 'fs';
 import path from 'path';
 import { getDb, getSqlite, DATA_DIR } from '../db/index.js';

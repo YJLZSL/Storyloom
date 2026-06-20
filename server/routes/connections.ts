@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { connections } from '../db/schema.js';
-import { workspaceIdParam, connectionIdParam, createConnectionBody, updateConnectionBody } from '../lib/validation.js';
+import { workspaceIdParam, connectionIdParam, createConnectionBody, updateConnectionBody, validateWorkspaceExists } from '../lib/validation.js';
 import type { CreateConnectionRequest, UpdateConnectionRequest, ConnectionType } from '../../shared/types.js';
 
 export async function connectionsRoutes(app: FastifyInstance) {
@@ -14,7 +14,7 @@ export async function connectionsRoutes(app: FastifyInstance) {
     const result = app.db.select().from(connections)
       .where(eq(connections.workspaceId, workspaceId))
       .all();
-    return { success: true, data: result };
+    return { success: true, data: { items: result ?? [] } };
   });
 
   // POST / — 创建关联
@@ -22,6 +22,7 @@ export async function connectionsRoutes(app: FastifyInstance) {
     schema: { params: workspaceIdParam, body: createConnectionBody },
   }, async (request, reply) => {
     const { workspaceId } = request.params;
+    if (!await validateWorkspaceExists(app, workspaceId, reply)) return;
     const { id: bodyId, sourceEventId, targetEventId, type, description } = request.body;
     const id = bodyId || uuidv4();
 

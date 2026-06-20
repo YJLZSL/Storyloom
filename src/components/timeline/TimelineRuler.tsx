@@ -107,6 +107,12 @@ export function TimelineRuler({
     [workspace?.calendarConfigJson],
   );
 
+  const todayLeft = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return (today.getTime() - referenceDateMs) * pixelsPerMs;
+  }, [referenceDateMs, pixelsPerMs]);
+
   const { majorTicks, minorTicks } = useMemo(() => {
     if (pixelsPerMs <= 0 || contentWidth <= 0) {
       return { majorTicks: [] as Tick[], minorTicks: [] as Tick[] };
@@ -160,25 +166,25 @@ export function TimelineRuler({
   return (
     <div
       className="flex border-b border-border bg-card/95 backdrop-blur-sm shrink-0"
-      style={{ height: 40 }}
+      style={{ height: 'calc(var(--timeline-ruler-height) * var(--zoom))' }}
     >
       {/* Sticky header spacer (matches track header width) */}
       <div
         className="sticky left-0 z-20 shrink-0 border-r border-border bg-card"
-        style={{ width: HEADER_WIDTH, height: 40 }}
+        style={{ width: HEADER_WIDTH, height: 'calc(var(--timeline-ruler-height) * var(--zoom))' }}
       />
 
       {/* Ruler content */}
       <div
         className="relative flex-1"
-        style={{ width: contentWidth, height: 40 }}
+        style={{ width: contentWidth, height: 'calc(var(--timeline-ruler-height) * var(--zoom))' }}
       >
         {/* Minor ticks */}
         {minorTicks.map((tick, i) => (
           <div
             key={`minor-${i}`}
-            className="absolute bottom-0 w-px bg-muted-foreground/30"
-            style={{ left: tick.position, height: 8 }}
+            className="absolute bottom-0 w-px bg-border/50"
+            style={{ left: tick.position, height: 'calc(var(--timeline-minor-tick-height) * var(--zoom))' }}
           />
         ))}
 
@@ -187,14 +193,45 @@ export function TimelineRuler({
           <div
             key={`major-${i}`}
             className="absolute bottom-0 flex flex-col items-start"
-            style={{ left: tick.position, height: 40 }}
+            style={{ left: tick.position, height: 'calc(var(--timeline-ruler-height) * var(--zoom))' }}
           >
-            <div className="w-px h-5 bg-foreground/60" />
-            <span className="text-[10px] text-muted-foreground font-mono mt-0.5 ml-1 whitespace-nowrap">
+            <div
+              className="w-px bg-muted-foreground"
+              style={{ height: 'calc(var(--timeline-ruler-tick-height) * var(--zoom))' }}
+            />
+            <span
+              className="whitespace-nowrap mt-0.5 ml-1"
+              style={{
+                font: 'var(--td-font-body-small)',
+                color: 'var(--td-text-color-secondary)',
+              }}
+            >
               {tick.label}
             </span>
           </div>
         ))}
+
+        {/* Current date highlight */}
+        {todayLeft >= 0 && todayLeft <= contentWidth && (
+          <div
+            className="absolute top-0 bottom-0 flex flex-col items-center pointer-events-none"
+            style={{ left: todayLeft, zIndex: 5 }}
+          >
+            <span
+              className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium"
+              style={{
+                backgroundColor: 'rgb(var(--primary) / 0.12)',
+                color: 'rgb(var(--primary))',
+              }}
+            >
+              今天
+            </span>
+            <div
+              className="flex-1 w-px"
+              style={{ backgroundColor: 'rgb(var(--primary) / 0.5)' }}
+            />
+          </div>
+        )}
 
         {/* Baseline */}
         <div className="absolute bottom-0 left-0 right-0 h-px bg-border" />

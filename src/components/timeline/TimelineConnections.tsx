@@ -1,27 +1,7 @@
 import { useMemo } from 'react';
 import type { Connection, TimelineEvent, Track } from '../../../shared/types';
+import { getTimelineConnectionStyle } from '@/lib/colors';
 import { TRACK_HEIGHT, TRACK_GAP, HEADER_WIDTH } from './TimelineTrack';
-
-const CONNECTION_STYLES: Record<string, { color: string; dashArray: string }> = {
-  '因果': { color: '#3b82f6', dashArray: 'none' },
-  '闪回': { color: '#8b5cf6', dashArray: '8 4' },
-  '伏笔': { color: '#22c55e', dashArray: '3 5' },
-  '平行': { color: '#f59e0b', dashArray: 'none' },
-  '对比': { color: '#ef4444', dashArray: '8 4' },
-  '呼应': { color: '#14b8a6', dashArray: 'none' },
-  '转折': { color: '#f97316', dashArray: '3 5' },
-  'causal': { color: '#3b82f6', dashArray: 'none' },
-  'flashback': { color: '#8b5cf6', dashArray: '8 4' },
-  'foreshadowing': { color: '#22c55e', dashArray: '3 5' },
-  'parallel': { color: '#f59e0b', dashArray: 'none' },
-  'contrast': { color: '#ef4444', dashArray: '8 4' },
-  'echo': { color: '#14b8a6', dashArray: 'none' },
-  'twist': { color: '#f97316', dashArray: '3 5' },
-};
-
-function getConnectionStyle(type: string) {
-  return CONNECTION_STYLES[type] || { color: '#6b7280', dashArray: 'none' };
-}
 
 export interface TimelineConnectionsProps {
   connections: Connection[];
@@ -108,7 +88,7 @@ export function TimelineConnections({
       const maxX = Math.max(source.x + source.width, target.x + target.width);
       if (maxX < visibleStart || minX > visibleEnd) continue;
 
-      const style = getConnectionStyle(conn.type);
+      const style = getTimelineConnectionStyle(conn.type);
 
       // Source: right-center, Target: left-center
       const sx = source.x + source.width;

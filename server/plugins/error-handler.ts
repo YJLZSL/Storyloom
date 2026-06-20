@@ -25,11 +25,27 @@ export const errorHandler = fp(async (app: FastifyInstance): Promise<void> => {
       });
     }
 
+    // JSON 解析错误
+    if ('code' in error && (error as FastifyError).code === 'FST_ERR_CTP_INVALID_JSON_BODY') {
+      return reply.status(400).send({
+        success: false,
+        error: {
+          code: 'INVALID_JSON',
+          message: '请求体 JSON 格式无效',
+        },
+      });
+    }
+
     // 未知错误
     const statusCode = 'statusCode' in error ? (error as FastifyError).statusCode : 500;
     const isDev = process.env.NODE_ENV !== 'production';
+    const errCode = (error as FastifyError).code;
 
     if (!statusCode || statusCode >= 500) {
+      // 兜底：即使 fastify logger 被关，也要把 5xx 详情打到 stdout，
+      // Electron 会被 setupLogging 重定向到 %APPDATA%\Storyloom\app.log。
+      // eslint-disable-next-line no-console
+      console.error('[5xx]', request.method, request.url, errCode || 'NO_CODE', '-', error.message, error.stack || '');
       request.log.error(error);
     }
 
@@ -37,7 +53,9 @@ export const errorHandler = fp(async (app: FastifyInstance): Promise<void> => {
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
-        message: isDev ? error.message : '服务器内部错误',
+        message: isDev
+          ? error.message
+          : `服务器内部错误${errCode ? ` (${errCode})` : ''}`,
       },
     });
   });

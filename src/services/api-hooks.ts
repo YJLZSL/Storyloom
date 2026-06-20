@@ -8,7 +8,7 @@ import type {
   CreateConnectionRequest, UpdateConnectionRequest,
   CreateForeshadowingRequest, UpdateForeshadowingRequest,
   CreateWorldSettingRequest, UpdateWorldSettingRequest,
-  ExportData,
+  ExportData, OutlineVersion, CreateOutlineVersionRequest,
 } from '../../shared/types.js';
 
 // Workspace hooks
@@ -101,9 +101,42 @@ export function useUpdateEvent() {
   return useMutation({
     mutationFn: ({ workspaceId, eventId, data }: { workspaceId: string; eventId: string; data: UpdateEventRequest }) =>
       api.patch<TimelineEvent>(`/api/workspaces/${workspaceId}/events/${eventId}`, data),
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ['events', vars.workspaceId] });
-      qc.invalidateQueries({ queryKey: ['events', vars.workspaceId, vars.eventId] });
+    onMutate: async ({ workspaceId, eventId, data }) => {
+      await qc.cancelQueries({ queryKey: ['events', workspaceId] });
+      await qc.cancelQueries({ queryKey: ['events', workspaceId, eventId] });
+      const previousEvents = qc.getQueryData<{ items: TimelineEvent[]; total: number }>(['events', workspaceId]);
+      const previousEvent = qc.getQueryData<TimelineEvent>(['events', workspaceId, eventId]);
+      const optimisticPatch: Partial<TimelineEvent> & { updatedAt: Date } = {
+        updatedAt: new Date(),
+      };
+      if (data.title !== undefined) optimisticPatch.title = data.title;
+      if (data.summary !== undefined) optimisticPatch.summary = data.summary;
+      if (data.description !== undefined) optimisticPatch.description = data.description;
+      if (data.location !== undefined) optimisticPatch.location = data.location;
+      if (data.tagsJson !== undefined) optimisticPatch.tagsJson = data.tagsJson;
+      qc.setQueryData<{ items: TimelineEvent[]; total: number } | undefined>(['events', workspaceId], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map((e) => (e.id === eventId ? ({ ...e, ...optimisticPatch } as TimelineEvent) : e)),
+        };
+      });
+      if (previousEvent) {
+        qc.setQueryData<TimelineEvent>(['events', workspaceId, eventId], { ...previousEvent, ...optimisticPatch } as TimelineEvent);
+      }
+      return { previousEvents, previousEvent };
+    },
+    onError: (_err, { workspaceId, eventId }, context) => {
+      if (context?.previousEvents) {
+        qc.setQueryData(['events', workspaceId], context.previousEvents);
+      }
+      if (context?.previousEvent) {
+        qc.setQueryData(['events', workspaceId, eventId], context.previousEvent);
+      }
+    },
+    onSettled: (_, __, { workspaceId, eventId }) => {
+      qc.invalidateQueries({ queryKey: ['events', workspaceId] });
+      qc.invalidateQueries({ queryKey: ['events', workspaceId, eventId] });
     },
   });
 }
@@ -195,7 +228,13 @@ export function useDeleteCharacter() {
 export function useConnections(workspaceId: string | null) {
   return useQuery({
     queryKey: ['connections', workspaceId],
-    queryFn: () => api.get<Connection[]>(`/api/workspaces/${workspaceId}/connections`),
+    queryFn: async () => {
+      const result = await api.get<{ items: Connection[] } | Connection[]>(
+        `/api/workspaces/${workspaceId}/connections`,
+      );
+      if (Array.isArray(result)) return result;
+      return result?.items ?? [];
+    },
     enabled: !!workspaceId,
   });
 }
@@ -339,6 +378,51 @@ export function useExportWorkspace(workspaceId: string | null, options?: { enabl
     queryKey: ['export', workspaceId],
     queryFn: () => api.get<ExportData>(`/api/workspaces/${workspaceId}/export`),
     enabled: options?.enabled ?? !!workspaceId,
+  });
+}
+
+// OutlineVersion hooks
+export function useOutlineVersions(workspaceId: string | null) {
+  return useQuery({
+    queryKey: ['outlineVersions', workspaceId],
+    queryFn: () => api.get<OutlineVersion[]>(`/api/workspaces/${workspaceId}/outline-versions`),
+    enabled: !!workspaceId,
+  });
+}
+
+export function useOutlineVersion(workspaceId: string | null, versionId: string | null) {
+  return useQuery({
+    queryKey: ['outlineVersions', workspaceId, versionId],
+    queryFn: () => api.get<OutlineVersion>(`/api/workspaces/${workspaceId}/outline-versions/${versionId}`),
+    enabled: !!workspaceId && !!versionId,
+  });
+}
+
+export function useCreateOutlineVersion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ workspaceId, data }: { workspaceId: string; data: CreateOutlineVersionRequest }) =>
+      api.post<OutlineVersion>(`/api/workspaces/${workspaceId}/outline-versions`, data),
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ['outlineVersions', vars.workspaceId] }),
+  });
+}
+
+export function useDeleteOutlineVersion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ workspaceId, versionId }: { workspaceId: string; versionId: string }) =>
+      api.delete<{ id: string }>(`/api/workspaces/${workspaceId}/outline-versions/${versionId}`),
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ['outlineVersions', vars.workspaceId] }),
+  });
+}
+
+export function useRestoreOutlineVersion() {
+  return useMutation({
+    mutationFn: ({ workspaceId, versionId }: { workspaceId: string; versionId: string }) =>
+      api.post<{ content: string; description: string | null }>(
+        `/api/workspaces/${workspaceId}/outline-versions/${versionId}/restore`,
+        {},
+      ),
   });
 }
 

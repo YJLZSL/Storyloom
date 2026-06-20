@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import { getNodeColor } from '@/lib/colors';
 
 export type GraphNodeType = 'character' | 'event' | 'world-setting';
 
@@ -17,13 +18,8 @@ interface RelationshipGraphProps {
   nodes: GraphNode[];
   links: GraphLink[];
   onNodeClick: (node: GraphNode) => void;
+  highlightedNodeIds?: Set<string> | null;
 }
-
-const NODE_COLORS: Record<GraphNodeType, string> = {
-  character: '#3B5BDB',
-  event: '#16A34A',
-  'world-setting': '#EA580C',
-};
 
 const MIN_RADIUS = 20;
 const MAX_RADIUS = 40;
@@ -38,11 +34,13 @@ function truncate(text: string, max: number): string {
   return text.length > max ? text.slice(0, max) + '…' : text;
 }
 
-export function RelationshipGraph({ nodes, links, onNodeClick }: RelationshipGraphProps) {
+export function RelationshipGraph({ nodes, links, onNodeClick, highlightedNodeIds }: RelationshipGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphLink> | null>(null);
   const onNodeClickRef = useRef(onNodeClick);
   onNodeClickRef.current = onNodeClick;
+  const highlightedRef = useRef(highlightedNodeIds);
+  highlightedRef.current = highlightedNodeIds;
 
   useEffect(() => {
     const svgEl = svgRef.current;
@@ -90,12 +88,13 @@ export function RelationshipGraph({ nodes, links, onNodeClick }: RelationshipGra
       .selectAll<SVGGElement, GraphNode>('g')
       .data(localNodes)
       .join('g')
+      .attr('class', 'gnode')
       .style('cursor', 'pointer');
 
     node
       .append('circle')
       .attr('r', (d) => nodeRadius(d.degree, maxDegree))
-      .attr('fill', (d) => NODE_COLORS[d.type])
+      .attr('fill', (d) => getNodeColor(d.type))
       .style('stroke', 'rgb(var(--background))')
       .attr('stroke-width', 2);
 
@@ -170,6 +169,30 @@ export function RelationshipGraph({ nodes, links, onNodeClick }: RelationshipGra
       svg.on('.zoom', null);
     };
   }, [nodes, links]);
+
+  useEffect(() => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+    const svg = d3.select(svgEl);
+    const hasHighlight = !!(highlightedNodeIds && highlightedNodeIds.size > 0);
+    svg.selectAll<SVGGElement, GraphNode>('g.gnode')
+      .each(function (datum) {
+        const group = d3.select(this as SVGGElement);
+        if (!datum || typeof datum !== 'object' || !('id' in datum)) return;
+        const matched = hasHighlight && highlightedNodeIds!.has(datum.id);
+        group.style('opacity', hasHighlight ? (matched ? 1 : 0.4) : 1);
+        group.select('circle')
+          .attr('stroke', matched ? '#facc15' : 'rgb(var(--background))')
+          .attr('stroke-width', matched ? 4 : 2);
+      });
+    svg.selectAll<SVGLineElement, GraphLink>('line')
+      .style('opacity', (d) => {
+        if (!hasHighlight) return 0.3;
+        const sId = typeof d.source === 'object' ? (d.source as GraphNode).id : (d.source as string);
+        const tId = typeof d.target === 'object' ? (d.target as GraphNode).id : (d.target as string);
+        return highlightedNodeIds!.has(sId) || highlightedNodeIds!.has(tId) ? 0.6 : 0.1;
+      });
+  }, [highlightedNodeIds, nodes]);
 
   return (
     <svg

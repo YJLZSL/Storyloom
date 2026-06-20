@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { safeJsonArray } from '@/lib/utils';
 
 export interface AIChatMessage {
   id: string;
@@ -23,9 +24,7 @@ const STORAGE_KEY = 'ai-conversations';
 function loadConversations(): AIConversation[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as AIConversation[];
-    return Array.isArray(parsed) ? parsed : [];
+    return safeJsonArray<AIConversation>(raw, []);
   } catch {
     return [];
   }

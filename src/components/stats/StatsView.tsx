@@ -1,14 +1,19 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
+import { ChartHistogramIcon, GroupIcon, RemindIcon, LinkIcon, ClockIcon } from '@/lib/icons';
 import { useEvents, useCharacters, useTracks, useConnections, useForeshadowings } from '@/services/api-hooks';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { useSelectionStore } from '@/stores/useSelectionStore';
 
 export function StatsView() {
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
   const setViewMode = useTimelineStore((s) => s.setViewMode);
   const setOutlineFilterTrackId = useTimelineStore((s) => s.setOutlineFilterTrackId);
   const setActivePanel = useUIStore((s) => s.setActivePanel);
+  const selectedEventId = useSelectionStore((s) => s.selectedEventId);
+  const selectedCharacterId = useSelectionStore((s) => s.selectedCharacterId);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { data: eventsData } = useEvents(workspaceId);
   const { data: characters } = useCharacters(workspaceId);
   const { data: tracks } = useTracks(workspaceId);
@@ -68,6 +73,11 @@ export function StatsView() {
   const maxTrackCount = Math.max(1, ...trackDistribution.map((t) => t.count));
   const maxCharCount = Math.max(1, ...characterFrequency.map((c) => c.count));
 
+  const selectedTrackId = useMemo(() => {
+    if (!selectedEventId) return null;
+    return events.find((e) => e.id === selectedEventId)?.trackId ?? null;
+  }, [selectedEventId, events]);
+
   // Click handlers
   const handleTrackBarClick = (trackId: string) => {
     setOutlineFilterTrackId(trackId);
@@ -78,39 +88,55 @@ export function StatsView() {
     setActivePanel('foreshadowing');
   };
 
-  const handleCharacterBarClick = () => {
+  const handleCharacterBarClick = (charId: string) => {
+    useSelectionStore.getState().selectCharacter(charId);
     setActivePanel('characters');
   };
 
   const eventsWithDates = events.filter((e) => e.startTime !== null).length;
 
+  // Scroll selected track / character bar into view
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const targetId = selectedTrackId ?? selectedCharacterId;
+    if (!targetId) return;
+    const timer = requestAnimationFrame(() => {
+      const target = containerRef.current?.querySelector(`[data-entity-id="${targetId}"]`);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [selectedTrackId, selectedCharacterId]);
+
   return (
-    <div className="h-full flex flex-col p-6 overflow-auto">
+    <div ref={containerRef} className="h-full flex flex-col p-6 overflow-auto">
       <h2 className="font-serif text-2xl font-semibold mb-6 tracking-tight">统计视图</h2>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-        <StatCard title="总事件" value={events.length} />
-        <StatCard title="角色数" value={characters?.length || 0} />
-        <StatCard title="轨道数" value={tracks?.length || 0} />
-        <StatCard title="关联数" value={connections?.length || 0} />
-        <StatCard title="伏笔数" value={foreshadowings?.length || 0} />
-        <StatCard title="时间跨度" value={getTimeSpan(events)} />
+        <StatCard title="总事件" value={events.length} icon={<ChartHistogramIcon size={16} />} />
+        <StatCard title="角色数" value={characters?.length || 0} icon={<GroupIcon size={16} />} />
+        <StatCard title="轨道数" value={tracks?.length || 0} icon={<LinkIcon size={16} />} />
+        <StatCard title="关联数" value={connections?.length || 0} icon={<LinkIcon size={16} />} />
+        <StatCard title="伏笔数" value={foreshadowings?.length || 0} icon={<RemindIcon size={16} />} />
+        <StatCard title="时间跨度" value={getTimeSpan(events)} icon={<ClockIcon size={16} />} />
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Track Distribution */}
-        <div className="border border-border rounded-lg p-4">
+        <div className="border border-border rounded-xl p-5 bg-card shadow-sm">
           <h3 className="font-serif text-lg font-semibold mb-4">轨道事件分布</h3>
           {trackDistribution.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm font-sans">暂无轨道</div>
+            <EmptyState message="暂无轨道" hint="创建轨道后，这里会显示每条轨道上的事件分布" />
           ) : (
             <div className="space-y-3">
               {trackDistribution.map((track) => (
                 <div
                   key={track.id}
-                  className="flex items-center gap-3 cursor-pointer group"
+                  data-entity-id={track.id}
+                  className={`flex items-center gap-3 cursor-pointer group p-1.5 rounded-md transition-colors ${
+                    selectedTrackId === track.id ? 'bg-primary/10 ring-1 ring-primary/40' : ''
+                  }`}
                   onClick={() => handleTrackBarClick(track.id)}
                   title={`点击查看「${track.name}」轨道事件`}
                 >
@@ -132,7 +158,7 @@ export function StatsView() {
         </div>
 
         {/* Heatmap */}
-        <div className="border border-border rounded-lg p-4">
+        <div className="border border-border rounded-xl p-5 bg-card shadow-sm">
           <h3 className="font-serif text-lg font-semibold mb-4">情节密度热力图</h3>
           <EventDensityHeatmap events={events} />
         </div>
@@ -141,32 +167,35 @@ export function StatsView() {
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Foreshadowing Status */}
-        <div className="border border-border rounded-lg p-4">
+        <div className="border border-border rounded-xl p-5 bg-card shadow-sm">
           <h3 className="font-serif text-lg font-semibold mb-4">伏笔生命周期</h3>
           {foreshadowings && foreshadowings.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
-              <ForeshadowingStat label="已埋下" count={foreshadowingStats.planted} color="bg-yellow-500" onClick={handleForeshadowingStatClick} />
-              <ForeshadowingStat label="发展中" count={foreshadowingStats.developed} color="bg-blue-500" onClick={handleForeshadowingStatClick} />
-              <ForeshadowingStat label="已回收" count={foreshadowingStats.resolved} color="bg-green-500" onClick={handleForeshadowingStatClick} />
-              <ForeshadowingStat label="已废弃" count={foreshadowingStats.abandoned} color="bg-gray-500" onClick={handleForeshadowingStatClick} />
+              <ForeshadowingStat label="已埋下" count={foreshadowingStats.planted} color="bg-warning" onClick={handleForeshadowingStatClick} />
+              <ForeshadowingStat label="发展中" count={foreshadowingStats.developed} color="bg-info" onClick={handleForeshadowingStatClick} />
+              <ForeshadowingStat label="已回收" count={foreshadowingStats.resolved} color="bg-success" onClick={handleForeshadowingStatClick} />
+              <ForeshadowingStat label="已废弃" count={foreshadowingStats.abandoned} color="bg-muted-foreground" onClick={handleForeshadowingStatClick} />
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground text-sm font-sans">暂无伏笔</div>
+            <EmptyState message="暂无伏笔" hint="在伏笔面板创建伏笔后，这里会显示生命周期分布" />
           )}
         </div>
 
         {/* Character Appearance Frequency */}
-        <div className="border border-border rounded-lg p-4">
+        <div className="border border-border rounded-xl p-5 bg-card shadow-sm">
           <h3 className="font-serif text-lg font-semibold mb-4">角色出场频率</h3>
           {characterFrequency.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm font-sans">暂无角色关联数据</div>
+            <EmptyState message="暂无角色关联数据" hint="给事件分配角色后，这里会显示角色出场频率" />
           ) : (
             <div className="space-y-2">
               {characterFrequency.map((char) => (
                 <div
                   key={char.id}
-                  className="flex items-center gap-3 cursor-pointer group"
-                  onClick={handleCharacterBarClick}
+                  data-entity-id={char.id}
+                  className={`flex items-center gap-3 cursor-pointer group p-1.5 rounded-md transition-colors ${
+                    selectedCharacterId === char.id ? 'bg-primary/10 ring-1 ring-primary/40' : ''
+                  }`}
+                  onClick={() => handleCharacterBarClick(char.id)}
                   title="点击打开角色面板"
                 >
                   <span className="text-sm w-20 truncate font-sans group-hover:text-primary transition-colors">{char.name}</span>
@@ -175,7 +204,7 @@ export function StatsView() {
                       className="char-bar h-full rounded-full group-hover:opacity-80 transition-all duration-500"
                       style={{
                         width: `${(char.count / maxCharCount) * 100}%`,
-                        backgroundColor: '#8b5cf6',
+                        backgroundColor: 'rgb(var(--primary))',
                       }}
                     />
                   </div>
@@ -189,7 +218,7 @@ export function StatsView() {
 
       {/* Charts Row 3 - Event Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="border border-border rounded-lg p-4">
+        <div className="border border-border rounded-xl p-5 bg-card shadow-sm">
           <h3 className="font-serif text-lg font-semibold mb-4">事件概览</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -233,11 +262,14 @@ export function StatsView() {
   );
 }
 
-function StatCard({ title, value }: { title: string; value: string | number }) {
+function StatCard({ title, value, icon }: { title: string; value: string | number; icon?: React.ReactNode }) {
   return (
-    <div className="stat-card border border-border rounded-lg p-3 bg-card hover:shadow-md transition-shadow">
-      <div className="text-xs text-muted-foreground mb-1 font-sans">{title}</div>
-      <div className="text-xl font-serif font-bold tracking-tight">{value}</div>
+    <div className="stat-card border border-border rounded-xl p-4 bg-gradient-to-br from-card to-muted/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5 font-sans">
+        {icon}
+        {title}
+      </div>
+      <div className="text-2xl font-serif font-bold tracking-tight text-card-foreground">{value}</div>
     </div>
   );
 }
@@ -254,6 +286,18 @@ function ForeshadowingStat({ label, count, color, onClick }: { label: string; co
         <div className="text-xs text-muted-foreground font-sans">{label}</div>
         <div className="text-lg font-serif font-bold">{count}</div>
       </div>
+    </div>
+  );
+}
+
+function EmptyState({ message, hint }: { message: string; hint: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 text-center">
+      <div className="w-12 h-12 rounded-full bg-muted/60 flex items-center justify-center mb-3">
+        <ChartHistogramIcon size={20} className="text-muted-foreground/70" />
+      </div>
+      <div className="text-sm text-muted-foreground font-medium mb-1">{message}</div>
+      <div className="text-xs text-muted-foreground/70 max-w-[240px]">{hint}</div>
     </div>
   );
 }
@@ -281,7 +325,7 @@ function EventDensityHeatmap({
     .map((t) => new Date(t));
 
   if (times.length === 0) {
-    return <div className="text-center py-12 text-muted-foreground text-sm font-sans">暂无数据</div>;
+    return <EmptyState message="暂无数据" hint="创建带日期的事件后，这里会按月显示事件密度" />;
   }
 
   const byMonth = new Map<string, number>();
@@ -300,7 +344,7 @@ function EventDensityHeatmap({
           key={month}
           className="heatmap-cell aspect-square rounded-md flex items-center justify-center text-xs font-mono hover:scale-105 transition-transform cursor-default"
           style={{
-            backgroundColor: `rgba(196, 112, 58, ${0.1 + (count / maxCount) * 0.9})`,
+            backgroundColor: `rgb(var(--primary) / ${0.1 + (count / maxCount) * 0.9})`,
           }}
           title={`${month}: ${count} 个事件`}
         >

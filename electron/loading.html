@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'" />
+  <title>Storyloom · 启动中</title>
+  <style>
+    :root {
+      --bg: #FAF6EF;
+      --fg: #3F3A33;
+      --muted: #8B7E6B;
+      --primary: #9C7B4F;
+      --error: #B5443B;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      overflow: hidden;
+      user-select: none;
+    }
+    .container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 0 32px;
+    }
+    .logo {
+      font-family: 'Source Han Serif SC', 'Noto Serif SC', serif;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      color: var(--primary);
+    }
+    .sub {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 3px solid rgba(156, 123, 79, 0.18);
+      border-top-color: var(--primary);
+      animation: spin 0.9s linear infinite;
+    }
+    .spinner.error {
+      animation: none;
+      border-color: var(--error);
+      border-top-color: var(--error);
+      width: 36px;
+      height: 36px;
+      position: relative;
+    }
+    .spinner.error::before {
+      content: '!';
+      color: var(--error);
+      font-size: 22px;
+      font-weight: 700;
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .status {
+      font-size: 14px;
+      color: var(--fg);
+      max-width: 480px;
+      text-align: center;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .status.error {
+      color: var(--error);
+      font-size: 13px;
+      max-height: 200px;
+      overflow: auto;
+      text-align: left;
+      padding: 12px 16px;
+      background: rgba(181, 68, 59, 0.08);
+      border-radius: 8px;
+      border: 1px solid rgba(181, 68, 59, 0.18);
+    }
+    .footer {
+      position: fixed;
+      bottom: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">Storyloom</div>
+    <div class="sub">絮织 · 视觉小说创作工作台</div>
+    <div id="spinner" class="spinner"></div>
+    <div id="status" class="status">正在启动…</div>
+  </div>
+  <div class="footer" id="footer">v1.1.0 · 启动中</div>
+  <script>
+    window.updateStatus = function (text, kind) {
+      var el = document.getElementById('status');
+      var sp = document.getElementById('spinner');
+      if (!el || !sp) return;
+      el.textContent = text || '';
+      if (kind === 'error') {
+        el.classList.add('error');
+        sp.classList.add('error');
+      } else {
+        el.classList.remove('error');
+        sp.classList.remove('error');
+      }
+    };
+    window.setFooter = function (text) {
+      var el = document.getElementById('footer');
+      if (el) el.textContent = text;
+    };
+  </script>
+</body>
+</html>

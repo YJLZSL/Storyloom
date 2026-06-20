@@ -2,26 +2,43 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import compress from '@fastify/compress';
 import staticPlugin from '@fastify/static';
+import multipart from '@fastify/multipart';
 import path from 'path';
 import fs from 'fs';
+import { pathToFileURL } from 'url';
 import { initDatabase, checkDatabaseIntegrity } from './db/migrate.js';
-import { getDb, getSqlite, DATA_DIR, closeDb } from './db/index.js';
+import { closeDb } from './db/index.js';
 import { errorHandler } from './plugins/error-handler.js';
 import { databasePlugin } from './plugins/database.js';
 import { validationPlugin } from './plugins/validation.js';
-import { workspacesRoutes } from './routes/workspaces.js';
+import { workspacesRoutes } from './routes/workspaces/index.js';
 import { eventsRoutes } from './routes/events.js';
 import { tracksRoutes } from './routes/tracks.js';
 import { charactersRoutes } from './routes/characters.js';
 import { connectionsRoutes } from './routes/connections.js';
 import { foreshadowingsRoutes } from './routes/foreshadowings.js';
 import { worldSettingsRoutes } from './routes/world-settings.js';
+import { outlineVersionsRoutes } from './routes/outline-versions.js';
+import { scenesRoutes } from './routes/scenes.js';
+import { beatsRoutes } from './routes/beats.js';
+import { choicesRoutes } from './routes/choices.js';
+import { flagsRoutes } from './routes/flags.js';
+import { mapsRoutes } from './routes/maps.js';
+import { assetsRoutes } from './routes/assets.js';
+import { revisionsRoutes } from './routes/revisions.js';
 import { aiRoutes } from './routes/ai.js';
+import { searchRoutes } from './routes/search.js';
 import type { HealthCheckResponse } from '../shared/types.js';
 
 export async function createApp(options?: { logger?: boolean }) {
+  // 在 Electron 桌面端 prod 下也启用 fastify logger（main.ts 注入 STORYLOOM_ELECTRON=1），
+  // 让 5xx 错误能落到 stdout（被 setupLogging 重定向到 app.log）。
+  // 浏览器 prod（如未来部署 web 版）仍然关 logger。
+  const isElectron = process.env.STORYLOOM_ELECTRON === '1';
+  const enableLogger =
+    options?.logger ?? (process.env.NODE_ENV !== 'production' || isElectron);
   const app = Fastify({
-    logger: options?.logger ?? (process.env.NODE_ENV !== 'production'),
+    logger: enableLogger,
     bodyLimit: 5 * 1024 * 1024, // 5MB
   });
 
@@ -40,6 +57,9 @@ export async function createApp(options?: { logger?: boolean }) {
   await app.register(compress, {
     // Ensure charset is preserved in compressed responses
     removeContentLengthHeader: false,
+  });
+  await app.register(multipart, {
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   });
   await app.register(errorHandler);
   await app.register(databasePlugin);
@@ -65,16 +85,27 @@ export async function createApp(options?: { logger?: boolean }) {
   await app.register(connectionsRoutes, { prefix: '/api/workspaces/:workspaceId/connections' });
   await app.register(foreshadowingsRoutes, { prefix: '/api/workspaces/:workspaceId/foreshadowings' });
   await app.register(worldSettingsRoutes, { prefix: '/api/workspaces/:workspaceId/world-settings' });
+  await app.register(outlineVersionsRoutes, { prefix: '/api/workspaces/:workspaceId/outline-versions' });
+  // 视觉小说路由 (v1.2)
+  await app.register(scenesRoutes, { prefix: '/api/workspaces/:workspaceId/scenes' });
+  await app.register(beatsRoutes, { prefix: '/api/scenes/:sceneId/beats' });
+  await app.register(choicesRoutes, { prefix: '/api/beats/:beatId/choices' });
+  await app.register(flagsRoutes, { prefix: '/api/workspaces/:workspaceId/flags' });
+  await app.register(mapsRoutes, { prefix: '/api/workspaces/:workspaceId/maps' });
+  await app.register(assetsRoutes, { prefix: '/api/workspaces/:workspaceId/assets' });
+  await app.register(revisionsRoutes, { prefix: '/api/workspaces/:workspaceId/revisions' });
+  await app.register(searchRoutes, { prefix: '/api/workspaces/:workspaceId' });
   await app.register(aiRoutes, { prefix: '/api/ai' });
 
   // 健康检查
   app.get('/api/health', async () => {
     const integrity = checkDatabaseIntegrity();
-    const sqlite = getSqlite();
-    const walMode = sqlite.pragma('journal_mode', { simple: true }) as string;
-    const db = getDb();
+    // 同步通过 app.sqlite（fastify decorate 注入）读取 PRAGMA，避免动态 import
+    const walModeRaw = app.sqlite.pragma('journal_mode', { simple: true }) as string;
+    const userVersion = app.sqlite.pragma('user_version', { simple: true }) as number;
+    const walMode = (walModeRaw || '').toLowerCase();
     const { workspaces } = await import('./db/schema.js');
-    const workspaceCount = db.select().from(workspaces).all().length;
+    const workspaceCount = app.db.select().from(workspaces).all().length;
 
     return {
       success: true,
@@ -86,6 +117,10 @@ export async function createApp(options?: { logger?: boolean }) {
           walMode: walMode === 'wal',
           integrity,
           workspaceCount,
+        },
+        dbStats: {
+          walMode,
+          userVersion,
         },
       } satisfies HealthCheckResponse,
     };
@@ -138,23 +173,66 @@ export async function startServer(port?: number): Promise<void> {
 
   try {
     await app.listen({ port: serverPort, host: '0.0.0.0' });
-    console.log(`Server running on port ${serverPort}`);
+    app.log.info(`Server running on port ${serverPort}`);
   } catch (err) {
     app.log.error(err);
+    if (err instanceof Error && (err as NodeJS.ErrnoException).code === 'EADDRINUSE') {
+      throw new Error(`port ${serverPort} in use`, { cause: err });
+    }
     throw err;
   }
+
+  // graceful shutdown：监听 SIGTERM / SIGINT
+  let shuttingDown = false;
+  const shutdown = (signal: NodeJS.Signals) => {
+    if (shuttingDown) {
+      app.log.warn(`再次收到 ${signal}，立即强制退出`);
+      process.exit(1);
+    }
+    shuttingDown = true;
+    app.log.info(`收到 ${signal}，开始优雅关闭…`);
+
+    const forceExitTimer = setTimeout(() => {
+      app.log.error('优雅关闭超时（5s），强制退出');
+      process.exit(1);
+    }, 5000);
+    forceExitTimer.unref?.();
+
+    (async () => {
+      try {
+        await app.close();
+      } catch (err) {
+        app.log.error({ err }, 'app.close() 失败');
+      }
+      try {
+        closeDb();
+      } catch (err) {
+        app.log.error({ err }, 'closeDb() 失败');
+      }
+      clearTimeout(forceExitTimer);
+      process.exit(0);
+    })();
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 // 直接运行时启动服务器（仅当作为主入口执行时）
-// 使用 process.argv[1] 判断，避免被 import 时误触发
-const isDirectRun = process.argv[1] && (
-  process.argv[1].includes('server/index.ts') ||
-  process.argv[1].includes('server/index.js') ||
-  process.argv[1].includes('server\\index.ts') ||
-  process.argv[1].includes('server\\index.js')
-);
+// 使用 import.meta.url === pathToFileURL(process.argv[1]) 比较，避免子串误匹配
+const isDirectRun = (() => {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return import.meta.url === pathToFileURL(entry).href;
+  } catch {
+    return false;
+  }
+})();
 if (isDirectRun) {
   startServer().catch((err) => {
+    // CLI / standalone entry — fastify 实例尚未创建，console 输出至终端
+    // eslint-disable-next-line no-console
     console.error('[server] 启动失败:', err);
     process.exit(1);
   });

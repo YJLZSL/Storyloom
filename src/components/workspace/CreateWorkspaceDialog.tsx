@@ -1,30 +1,26 @@
 import { useState, useEffect } from 'react';
-import { Plus, FileText, Compass, Layers, ScrollText, User, Film } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { MessagePlugin } from 'tdesign-react';
 import { useCreateWorkspace } from '@/services/api-hooks.js';
 import { applyTemplate } from '@/lib/apply-template.js';
 import { STORY_TEMPLATES } from '@/lib/story-templates.js';
+import { Dialog } from '@/components/ui-tdesign';
+import { TInput, TTextarea, TButton } from '@/components/ui-tdesign';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog.js';
-import { Button } from '@/components/ui/button.js';
-import { Input } from '@/components/ui/input.js';
-import { Label } from '@/components/ui/label.js';
-import { Textarea } from '@/components/ui/textarea.js';
+  CompassIcon,
+  LayersIcon,
+  FilmIcon,
+  FileTextIcon,
+  UserIcon,
+} from '@/lib/icons';
 import { cn } from '@/lib/utils.js';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Compass,
-  Layers,
-  Film,
-  ScrollText,
-  User,
+  Compass: CompassIcon,
+  Layers: LayersIcon,
+  Film: FilmIcon,
+  ScrollText: FileTextIcon,
+  User: UserIcon,
 };
 
 const BLANK_TEMPLATE = {
@@ -57,9 +53,9 @@ export function CreateWorkspaceDialog({ open, onClose, onCreated }: CreateWorksp
     }
   }, [open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!name.trim() || createWorkspace.isPending || applying) return;
     try {
       const result = await createWorkspace.mutateAsync({ name, description });
       if (templateId !== 'blank') {
@@ -68,18 +64,21 @@ export function CreateWorkspaceDialog({ open, onClose, onCreated }: CreateWorksp
           await applyTemplate(result.id, templateId);
           qc.invalidateQueries({ queryKey: ['tracks', result.id] });
           qc.invalidateQueries({ queryKey: ['events', result.id] });
-          toast.success('工作区已创建，模板已应用');
+          MessagePlugin.success('工作区已创建，模板已应用');
         } catch (err) {
           const message = err instanceof Error ? err.message : '模板应用失败';
-          toast.error(`模板应用失败: ${message}`);
+          MessagePlugin.error(`模板应用失败: ${message}`);
         } finally {
           setApplying(false);
         }
       }
       onCreated(result.id);
       onClose();
-    } catch {
-      // error handled by mutation
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '创建工作区失败';
+      MessagePlugin.error(`创建失败: ${message}`);
+    } finally {
+      setApplying(false);
     }
   };
 
@@ -89,74 +88,81 @@ export function CreateWorkspaceDialog({ open, onClose, onCreated }: CreateWorksp
   ];
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>新建工作区</DialogTitle>
-          <DialogDescription>选择一个模板并命名您的工作区</DialogDescription>
-        </DialogHeader>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => !v && onClose()}
+      header="新建工作区"
+      width={640}
+      confirmBtn={{
+        content: '创建',
+        disabled: !name.trim() || createWorkspace.isPending || applying,
+        loading: createWorkspace.isPending || applying,
+      }}
+      cancelBtn="取消"
+      onConfirm={() => {
+        void handleSubmit();
+      }}
+      onCancel={onClose}
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit(e);
+        }}
+        className="space-y-5"
+      >
+        <p className="text-sm text-muted-foreground">选择一个模板并命名您的工作区</p>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <Label>选择模板</Label>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {options.map((t) => {
-                const Icon = ICON_MAP[t.icon] ?? FileText;
-                const active = templateId === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setTemplateId(t.id)}
-                    className={cn(
-                      'flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-colors',
-                      active
-                        ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                        : 'border-border hover:bg-accent',
-                    )}
-                  >
-                    <Icon className={cn('size-4', active ? 'text-primary' : 'text-muted-foreground')} />
-                    <span className="text-sm font-medium">{t.name}</span>
-                    <span className="line-clamp-1 text-xs text-muted-foreground">{t.description}</span>
-                  </button>
-                );
-              })}
-            </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">选择模板</label>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {options.map((t) => {
+              const Icon = ICON_MAP[t.icon] ?? FileTextIcon;
+              const active = templateId === t.id;
+              return (
+                <TButton
+                  key={t.id}
+                  type="button"
+                  variant="text"
+                  onClick={() => setTemplateId(t.id)}
+                  className={cn(
+                    'flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-colors h-auto',
+                    active
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                      : 'border-border hover:bg-accent',
+                  )}
+                >
+                  <Icon className={cn('size-4', active ? 'text-primary' : 'text-muted-foreground')} />
+                  <span className="text-sm font-medium">{t.name}</span>
+                  <span className="line-clamp-1 text-xs text-muted-foreground">{t.description}</span>
+                </TButton>
+              );
+            })}
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ws-name">名称</Label>
-            <Input
-              id="ws-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="输入工作区名称"
-              autoFocus
-            />
-          </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">名称</label>
+          <TInput
+            value={name}
+            onChange={(val) => setName((val ?? '').toString())}
+            placeholder="输入工作区名称"
+            autofocus
+          />
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="ws-desc">描述（可选）</Label>
-            <Textarea
-              id="ws-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="输入工作区描述"
-              rows={2}
-            />
-          </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">描述（可选）</label>
+          <TTextarea
+            value={description}
+            onChange={(val) => setDescription((val ?? '').toString())}
+            placeholder="输入工作区描述"
+            rows={2}
+          />
+        </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              取消
-            </Button>
-            <Button type="submit" disabled={!name.trim() || createWorkspace.isPending || applying}>
-              <Plus className="size-4" />
-              创建
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
+        <button type="submit" hidden aria-hidden />
+      </form>
     </Dialog>
   );
 }

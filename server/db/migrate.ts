@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+// CLI / standalone migration script — console output goes to terminal
 import { getDb, getSqlite, runMigrations, closeDb, DATA_DIR } from './index.js';
 import path from 'path';
 import fs from 'fs';
@@ -13,8 +15,25 @@ export async function initDatabase(): Promise<void> {
     runMigrations();
     console.log('[DB] Migrations applied');
   } catch (err) {
-    // 兼容旧数据库：若迁移因对象已存在而失败，记录警告但继续启动
-    console.warn('[DB] Migration warning:', err instanceof Error ? err.message : err);
+    // v3.0.2+ 迁移兜底逻辑已在 runMigrations() 中大幅增强（3 层 fallback + 硬编码 DDL）。
+    // 若仍然抛出，说明所有 fallback 均失败 — 必须中断启动，不能带空库继续。
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[DB] Migration FATAL:', msg);
+    throw new Error(`Database migration failed: ${msg}`);
+  }
+
+  // 验证：核心表必须存在
+  const sqlite = getSqlite();
+  const tables = sqlite
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('workspaces','events','tracks')")
+    .all() as Array<{ name: string }>;
+  if (tables.length < 3) {
+    const missing = ['workspaces', 'events', 'tracks'].filter(
+      (t) => !tables.some((r) => r.name === t),
+    );
+    const errMsg = `Essential tables missing after migration: ${missing.join(', ')}`;
+    console.error(`[DB] ${errMsg}`);
+    throw new Error(errMsg);
   }
 
   // 创建启动备份
@@ -31,16 +50,16 @@ function createStartupBackup(): void {
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupPath = path.join(backupDir, `timeline-creator-${timestamp}.db`);
+  const backupPath = path.join(backupDir, `storyloom-${timestamp}.db`);
 
   try {
     const sqlite = getSqlite();
     sqlite.backup(backupPath);
     console.log(`[DB] Backup created: ${backupPath}`);
 
-    // 清理旧备份，保留最近 10 个
+    // 清理旧备份，保留最近 10 个（同时匹配新旧前缀）
     const backups = fs.readdirSync(backupDir)
-      .filter(f => f.startsWith('timeline-creator-') && f.endsWith('.db'))
+      .filter(f => (f.startsWith('storyloom-') || f.startsWith('timeline-creator-')) && f.endsWith('.db'))
       .sort()
       .reverse();
 

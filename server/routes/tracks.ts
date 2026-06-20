@@ -1,8 +1,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { tracks } from '../db/schema.js';
-import { workspaceIdParam, trackIdParam, createTrackBody, updateTrackBody } from '../lib/validation.js';
+import { workspaceIdParam, trackIdParam, createTrackBody, updateTrackBody, validateWorkspaceExists } from '../lib/validation.js';
 import type { CreateTrackRequest, UpdateTrackRequest } from '../../shared/types.js';
 
 export async function tracksRoutes(app: FastifyInstance) {
@@ -23,6 +23,7 @@ export async function tracksRoutes(app: FastifyInstance) {
     schema: { params: workspaceIdParam, body: createTrackBody },
   }, async (request, reply) => {
     const { workspaceId } = request.params;
+    if (!await validateWorkspaceExists(app, workspaceId, reply)) return;
     const { id: bodyId, name, color, orderIndex, isVisible } = request.body;
     const id = bodyId || uuidv4();
 
@@ -33,12 +34,21 @@ export async function tracksRoutes(app: FastifyInstance) {
       }
     }
 
+    let orderValue = orderIndex;
+    if (orderValue === undefined) {
+      const maxRow = app.db.select({ maxOrder: sql<number>`coalesce(max(${tracks.orderIndex}), -1)` })
+        .from(tracks)
+        .where(eq(tracks.workspaceId, workspaceId))
+        .get();
+      orderValue = (maxRow?.maxOrder ?? -1) + 1;
+    }
+
     const result = app.db.insert(tracks).values({
       id,
       workspaceId,
       name,
       color: color || '#3b82f6',
-      orderIndex: orderIndex ?? 0,
+      orderIndex: orderValue,
       isVisible: isVisible ?? true,
     }).returning().get();
 

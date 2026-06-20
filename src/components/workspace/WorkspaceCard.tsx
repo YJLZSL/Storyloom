@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
-import { Calendar, Trash2, FileText } from 'lucide-react';
+import { HistoryIcon, DeleteIcon, FileTextIcon } from '@/lib/icons';
 import { useEvents } from '@/services/api-hooks.js';
-import { Badge } from '@/components/ui/badge.js';
+import { TButton, TTag } from '@/components/ui-tdesign';
+import { safeWorkspaceName, safeDescription } from '@/lib/safe-text';
 import type { Workspace } from '../../../shared/types.js';
 
 interface WorkspaceCardProps {
@@ -40,29 +41,30 @@ export function WorkspaceCard({ workspace, onSelect, onDelete }: WorkspaceCardPr
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <h3 className="line-clamp-1 font-serif text-lg font-semibold text-foreground">
-          {workspace.name}
+          {safeWorkspaceName(workspace.name)}
         </h3>
-        <button
-          type="button"
+        <TButton
+          variant="text"
+          size="small"
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
           className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
           aria-label="删除工作区"
         >
-          <Trash2 className="size-4" />
-        </button>
+          <DeleteIcon size={16} />
+        </TButton>
       </div>
 
       <p className="mb-4 min-h-[2.5rem] line-clamp-2 text-sm text-muted-foreground">
-        {workspace.description || '暂无描述'}
+        {safeDescription(workspace.description)}
       </p>
 
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <Badge variant="secondary" className="gap-1 font-normal">
-          <FileText className="size-3" />
+        <TTag variant="light" size="small" className="gap-1 font-normal">
+          <FileTextIcon size={12} />
           {eventCount} 事件
-        </Badge>
+        </TTag>
         <span className="flex items-center gap-1">
-          <Calendar className="size-3" />
+          <HistoryIcon size={12} />
           {formatRelativeTime(workspace.updatedAt)}
         </span>
       </div>

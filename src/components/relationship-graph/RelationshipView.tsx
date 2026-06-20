@@ -8,25 +8,23 @@ import {
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useUIStore } from '@/stores/useUIStore';
+import { useSelectionStore } from '@/stores/useSelectionStore';
+import { LEGEND_ITEMS } from '@/lib/colors';
 import {
   RelationshipGraph,
   type GraphNode,
   type GraphLink,
-  type GraphNodeType,
 } from './RelationshipGraph';
-
-const LEGEND_ITEMS: { type: GraphNodeType; label: string; color: string }[] = [
-  { type: 'character', label: '人物', color: '#3B5BDB' },
-  { type: 'event', label: '事件', color: '#16A34A' },
-  { type: 'world-setting', label: '地点/世界观', color: '#EA580C' },
-];
 
 export function RelationshipView() {
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
-  const setSelectedEvent = useTimelineStore((s) => s.setSelectedEvent);
-  const setSelectedCharacter = useTimelineStore((s) => s.setSelectedCharacter);
+  const selectEvent = useSelectionStore((s) => s.selectEvent);
+  const selectCharacter = useSelectionStore((s) => s.selectCharacter);
+  const selectWorldSetting = useSelectionStore((s) => s.selectWorldSetting);
   const setViewMode = useTimelineStore((s) => s.setViewMode);
   const setActivePanel = useUIStore((s) => s.setActivePanel);
+  const selectedEventId = useSelectionStore((s) => s.selectedEventId);
+  const selectedCharacterId = useSelectionStore((s) => s.selectedCharacterId);
 
   const { data: eventsData, isLoading: eventsLoading } = useEvents(workspaceId);
   const { data: characters, isLoading: charsLoading } = useCharacters(workspaceId);
@@ -114,17 +112,40 @@ export function RelationshipView() {
   const handleNodeClick = useCallback(
     (node: GraphNode) => {
       if (node.type === 'event') {
-        setSelectedEvent(node.rawId);
+        selectEvent(node.rawId);
         setViewMode('timeline');
       } else if (node.type === 'character') {
-        setSelectedCharacter(node.rawId);
+        selectCharacter(node.rawId);
         setActivePanel('characters');
       } else {
+        selectWorldSetting(node.rawId);
         setActivePanel('worldview');
       }
     },
-    [setSelectedEvent, setSelectedCharacter, setViewMode, setActivePanel],
+    [selectEvent, selectCharacter, selectWorldSetting, setViewMode, setActivePanel],
   );
+
+  const highlightedNodeIds = useMemo(() => {
+    if (!selectedEventId && !selectedCharacterId) return null;
+    const ids = new Set<string>();
+    if (selectedEventId) {
+      const eventNodeId = `event:${selectedEventId}`;
+      ids.add(eventNodeId);
+      const event = events.find((e) => e.id === selectedEventId);
+      if (event) {
+        for (const cid of event.characterIds ?? []) ids.add(`char:${cid}`);
+        for (const wid of event.worldSettingIds ?? []) ids.add(`ws:${wid}`);
+      }
+      for (const conn of connections ?? []) {
+        if (conn.sourceEventId === selectedEventId) ids.add(`event:${conn.targetEventId}`);
+        if (conn.targetEventId === selectedEventId) ids.add(`event:${conn.sourceEventId}`);
+      }
+    }
+    if (selectedCharacterId) {
+      ids.add(`char:${selectedCharacterId}`);
+    }
+    return ids;
+  }, [selectedEventId, selectedCharacterId, events, connections]);
 
   const isLoading = eventsLoading || charsLoading || wsLoading || connLoading;
 
@@ -136,15 +157,12 @@ export function RelationshipView() {
     );
   }
 
-  if (nodes.length === 0) {
+  if (nodes.length === 0 && links.length === 0) {
     return (
       <div className="flex h-full items-center justify-center p-8">
-        <div className="text-center">
-          <p className="font-serif text-2xl text-foreground">关系图</p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            当前工作区暂无人物、事件或地点数据
-          </p>
-        </div>
+        <p className="text-center text-sm text-muted-foreground">
+          暂无关系数据，添加角色和关联以可视化关系
+        </p>
       </div>
     );
   }
@@ -155,6 +173,7 @@ export function RelationshipView() {
         nodes={nodes}
         links={links}
         onNodeClick={handleNodeClick}
+        highlightedNodeIds={highlightedNodeIds}
       />
       <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5 rounded-md border border-border bg-card/80 px-3 py-2 text-xs backdrop-blur">
         {LEGEND_ITEMS.map((item) => (

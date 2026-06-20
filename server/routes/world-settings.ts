@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { worldSettings } from '../db/schema.js';
-import { workspaceIdParam, settingIdParam, createWorldSettingBody, updateWorldSettingBody } from '../lib/validation.js';
+import { workspaceIdParam, settingIdParam, createWorldSettingBody, updateWorldSettingBody, validateWorkspaceExists } from '../lib/validation.js';
 import type { CreateWorldSettingRequest, UpdateWorldSettingRequest } from '../../shared/types.js';
 
 export async function worldSettingsRoutes(app: FastifyInstance) {
@@ -29,6 +29,7 @@ export async function worldSettingsRoutes(app: FastifyInstance) {
     schema: { params: workspaceIdParam, body: createWorldSettingBody },
   }, async (request, reply) => {
     const { workspaceId } = request.params;
+    if (!await validateWorkspaceExists(app, workspaceId, reply)) return;
     const { id: bodyId, category, key, value, description } = request.body;
     const id = bodyId || uuidv4();
 

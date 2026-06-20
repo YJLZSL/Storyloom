@@ -82,7 +82,7 @@ export function createDatabaseBackup(): string {
   }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupPath = path.join(backupDir, `timeline-creator-${timestamp}.db`);
+  const backupPath = path.join(backupDir, `storyloom-${timestamp}.db`);
 
   const sqlite = getSqlite();
   sqlite.backup(backupPath);
@@ -98,7 +98,7 @@ export function createDatabaseBackup(): string {
  */
 function pruneBackups(backupDir: string): void {
   const backups = fs.readdirSync(backupDir)
-    .filter(f => f.startsWith('timeline-creator-') && f.endsWith('.db'))
+    .filter(f => (f.startsWith('storyloom-') || f.startsWith('timeline-creator-')) && f.endsWith('.db'))
     .sort()
     .reverse();
 

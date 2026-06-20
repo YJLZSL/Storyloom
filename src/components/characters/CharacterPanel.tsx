@@ -1,9 +1,21 @@
-import { useState, useRef, useCallback } from 'react';
-import { Plus, Pencil, Trash2, X, Check, Link, Sparkles, MapPin, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import {
+  PlusIcon,
+  EditIcon,
+  DeleteIcon,
+  XIcon,
+  CheckIcon,
+  LinkIcon,
+  UserIcon,
+  GroupIcon,
+  SearchIcon,
+} from '@/lib/icons';
+import { TDialog, TCard, TButton, TInput, TTag, TBadge } from '@/components/ui-tdesign';
 import { useCharacters, useCreateCharacter, useUpdateCharacter, useDeleteCharacter, useEvents } from '@/services/api-hooks';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
-import { useUIStore } from '@/stores/useUIStore';
+import { useSelectionStore } from '@/stores/useSelectionStore';
+import { scrollSelectedIntoView } from '@/utils/revealInBestView';
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -11,24 +23,27 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
 } from '@/components/ui/ContextMenu';
+import { safeJsonArray } from '@/lib/utils';
 import type { Character } from '../../../shared/types';
 
 function parseTraits(traitsJson: string | null): string[] {
-  if (!traitsJson) return [];
-  try {
-    const parsed = JSON.parse(traitsJson);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  return safeJsonArray<string>(traitsJson, []);
 }
+
+type StatusFilter = 'all' | 'empty' | 'filled' | 'linked';
+
+const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: '全部' },
+  { key: 'empty', label: '待完善' },
+  { key: 'filled', label: '有资料' },
+  { key: 'linked', label: '关联中' },
+];
 
 export function CharacterPanel() {
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
-  const setSelectedEvent = useTimelineStore((s) => s.setSelectedEvent);
-  const scrollToEvent = useTimelineStore((s) => s.scrollToEvent);
   const setViewMode = useTimelineStore((s) => s.setViewMode);
-  const setActivePanel = useUIStore((s) => s.setActivePanel);
+  const selectedCharacterId = useSelectionStore((s) => s.selectedCharacterId);
+  const selectCharacter = useSelectionStore((s) => s.selectCharacter);
   const { data: characters } = useCharacters(workspaceId);
   const { data: eventsData } = useEvents(workspaceId);
   const createCharacter = useCreateCharacter();
@@ -36,9 +51,6 @@ export function CharacterPanel() {
   const deleteCharacter = useDeleteCharacter();
 
   const allEvents = eventsData?.items ?? [];
-
-  // Collapsible state for related events per character
-  const [expandedCharIds, setExpandedCharIds] = useState<Set<string>>(new Set());
 
   // Create form state
   const [name, setName] = useState('');
@@ -56,27 +68,74 @@ export function CharacterPanel() {
   // Delete confirmation state
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+
   const listRef = useRef<HTMLDivElement>(null);
 
-  const openEventEditor = useCallback((eventId: string) => {
-    setSelectedEvent(eventId);
-    setActivePanel('event-editor');
-  }, [setSelectedEvent, setActivePanel]);
+  const eventIdToCharacterIds = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const ev of allEvents) {
+      for (const cid of ev.characterIds ?? []) {
+        if (!map.has(cid)) map.set(cid, new Set());
+        map.get(cid)!.add(ev.id);
+      }
+    }
+    return map;
+  }, [allEvents]);
 
-  const handleAdd = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !workspaceId) return;
-    createCharacter.mutate({
-      workspaceId,
-      data: {
-        name,
-        role: role || undefined,
-        description: description || undefined,
+  const getCharacterStatus = useCallback((char: Character): { label: string; theme: 'default' | 'primary' | 'warning' | 'success' } => {
+    const linked = eventIdToCharacterIds.has(char.id);
+    const filled = !!(char.role?.trim() || char.description?.trim());
+    if (linked) return { label: '关联中', theme: 'primary' };
+    if (filled) return { label: '有资料', theme: 'success' };
+    return { label: '待完善', theme: 'warning' };
+  }, [eventIdToCharacterIds]);
+
+  const filtered = useMemo(() => {
+    let list = characters ?? [];
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(
+        (char) =>
+          char.name.toLowerCase().includes(q) ||
+          (char.role && char.role.toLowerCase().includes(q)) ||
+          (char.description && char.description.toLowerCase().includes(q)) ||
+          parseTraits(char.traitsJson).some((t) => t.toLowerCase().includes(q)),
+      );
+    }
+    if (statusFilter !== 'all') {
+      list = list.filter((char) => {
+        const status = getCharacterStatus(char);
+        if (statusFilter === 'empty') return status.label === '待完善';
+        if (statusFilter === 'filled') return status.label === '有资料';
+        if (statusFilter === 'linked') return status.label === '关联中';
+        return true;
+      });
+    }
+    return list;
+  }, [characters, search, statusFilter, getCharacterStatus]);
+
+  const handleAdd = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!name.trim() || !workspaceId || createCharacter.isPending) return;
+    createCharacter.mutate(
+      {
+        workspaceId,
+        data: {
+          name,
+          role: role || undefined,
+          description: description || undefined,
+        },
       },
-    });
-    setName('');
-    setRole('');
-    setDescription('');
+      {
+        onSuccess: () => {
+          setName('');
+          setRole('');
+          setDescription('');
+        },
+      },
+    );
   };
 
   const startEditing = (char: Character) => {
@@ -124,334 +183,322 @@ export function CharacterPanel() {
 
   const handleCardClick = (char: Character) => {
     if (editingId === char.id) return;
-    startEditing(char);
+    selectCharacter(selectedCharacterId === char.id ? null : char.id);
   };
+
+  // Scroll selected character card into view
+  useEffect(() => {
+    if (!selectedCharacterId || !listRef.current) return;
+    const timer = requestAnimationFrame(() => {
+      scrollSelectedIntoView('character', selectedCharacterId, listRef.current);
+    });
+    return () => cancelAnimationFrame(timer);
+  }, [selectedCharacterId]);
+
+  const statusCounts = useMemo(() => {
+    const list = characters ?? [];
+    return {
+      all: list.length,
+      empty: list.filter((c) => getCharacterStatus(c).label === '待完善').length,
+      filled: list.filter((c) => getCharacterStatus(c).label === '有资料').length,
+      linked: list.filter((c) => getCharacterStatus(c).label === '关联中').length,
+    };
+  }, [characters, getCharacterStatus]);
 
   return (
     <div className="h-full flex flex-col">
+      {/* Status filter badges + search */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+        {STATUS_FILTERS.map((sf) => (
+          <TButton
+            key={sf.key}
+            variant="text"
+            className="p-0 h-auto min-h-0"
+            onClick={() => setStatusFilter(sf.key)}
+          >
+            <TTag
+              variant={statusFilter === sf.key ? 'dark' : 'light'}
+              size="small"
+              theme={statusFilter === sf.key ? 'primary' : 'default'}
+            >
+              {sf.label}
+              <TBadge count={statusCounts[sf.key]} shape="circle" size="small" className="ml-1" />
+            </TTag>
+          </TButton>
+        ))}
+        <div className="ml-auto w-32">
+          <TInput
+            value={search}
+            onChange={(val) => setSearch((val ?? '').toString())}
+            placeholder="搜索角色"
+            size="small"
+            prefixIcon={<SearchIcon size={14} />}
+            clearable
+          />
+        </div>
+      </div>
+
       {/* Create form */}
       <form onSubmit={handleAdd} className="shrink-0 space-y-2 mb-4">
-        <input
-          type="text"
+        <TInput
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(val) => setName((val ?? '').toString())}
           placeholder="角色名称"
-          className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+          size="small"
         />
-        <input
-          type="text"
+        <TInput
           value={role}
-          onChange={(e) => setRole(e.target.value)}
+          onChange={(val) => setRole((val ?? '').toString())}
           placeholder="角色身份"
-          className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+          size="small"
         />
-        <textarea
+        <TInput
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(val) => setDescription((val ?? '').toString())}
           placeholder="角色描述"
-          rows={2}
-          className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-shadow resize-none"
+          size="small"
         />
-        <button
+        <TButton
           type="submit"
+          theme="primary"
+          size="small"
+          block
           disabled={!name.trim() || createCharacter.isPending}
-          className="w-full flex items-center justify-center gap-1 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
+          icon={<PlusIcon size={16} />}
         >
-          <Plus className="w-4 h-4" />
-          添加角色
-        </button>
+          {createCharacter.isPending ? '添加中...' : '添加角色'}
+        </TButton>
       </form>
 
-      {/* Character list */}
-      <div ref={listRef} className="flex-1 overflow-auto space-y-2">
-        {characters?.map((char) => {
-          const traits = parseTraits(char.traitsJson);
-          const isEditing = editingId === char.id;
-          const isDeleting = deletingId === char.id;
+      {/* Character grid */}
+      <div ref={listRef} className="flex-1 overflow-auto">
+        {filtered.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map((char) => {
+              const traits = parseTraits(char.traitsJson);
+              const isSelected = selectedCharacterId === char.id;
+              const status = getCharacterStatus(char);
 
-          return (
-            <ContextMenu key={char.id}>
-              <ContextMenuTrigger asChild>
-            <div
-              data-entity-id={char.id}
-              className="character-item rounded-md border border-border hover:bg-accent/50 transition-colors cursor-default"
-            >
-              {isEditing ? (
-                /* Expanded edit mode */
-                <div className="p-3 space-y-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground font-sans">编辑角色</span>
-                    <button
-                      type="button"
-                      onClick={cancelEditing}
-                      className="p-1 rounded hover:bg-accent transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="角色名称"
-                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-                  />
-                  <input
-                    type="text"
-                    value={editRole}
-                    onChange={(e) => setEditRole(e.target.value)}
-                    placeholder="角色身份"
-                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-                  />
-                  <textarea
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder="角色描述"
-                    rows={3}
-                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-shadow resize-none"
-                  />
-                  {/* Editable traits */}
-                  <div>
-                    <span className="text-xs text-muted-foreground font-sans">特征</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {editTraits.map((trait, i) => (
-                        <span
-                          key={i}
-                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-secondary text-secondary-foreground font-sans"
-                        >
-                          {trait}
-                          <button
-                            type="button"
-                            onClick={() => setEditTraits((prev) => prev.filter((_, idx) => idx !== i))}
-                            className="ml-0.5 hover:text-destructive transition-colors"
-                          >
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <input
-                        type="text"
-                        value={newTrait}
-                        onChange={(e) => setNewTrait(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && newTrait.trim()) {
-                            e.preventDefault();
-                            setEditTraits((prev) => [...prev, newTrait.trim()]);
-                            setNewTrait('');
-                          }
-                        }}
-                        placeholder="添加特征"
-                        className="flex-1 px-2 py-1 rounded border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (newTrait.trim()) {
-                            setEditTraits((prev) => [...prev, newTrait.trim()]);
-                            setNewTrait('');
-                          }
-                        }}
-                        className="px-2 py-1 rounded bg-primary text-primary-foreground text-xs hover:opacity-90 transition-opacity"
-                      >
-                        添加
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => saveEdit(char.id)}
-                      disabled={!editName.trim() || updateCharacter.isPending}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
-                    >
-                      <Check className="w-3.5 h-3.5" />
-                      保存
-                    </button>
-                    <button
-                      type="button"
-                      onClick={cancelEditing}
-                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-md border border-border text-sm hover:bg-accent transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      取消
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Normal card view */
-                <div
-                  className="px-3 py-2"
-                  onClick={() => handleCardClick(char)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium font-sans truncate">{char.name}</div>
-                      {char.role && (
-                        <div className="text-xs text-muted-foreground font-sans truncate">{char.role}</div>
-                      )}
-                      {char.description && (
-                        <div className="text-xs text-muted-foreground/80 font-sans mt-1 line-clamp-2">{char.description}</div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 ml-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          startEditing(char);
-                        }}
-                        className="p-1.5 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-                        title="编辑"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingId(char.id);
-                        }}
-                        className="p-1.5 rounded hover:bg-destructive/20 transition-colors text-muted-foreground hover:text-destructive"
-                        title="删除"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Trait tags */}
-                  {traits.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {traits.map((trait, i) => (
-                        <span
-                          key={i}
-                          className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-secondary text-secondary-foreground font-sans"
-                        >
-                          {trait}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Related events section */}
-                  <div className="mt-2 border-t border-border/50 pt-1.5">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedCharIds((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(char.id)) next.delete(char.id);
-                          else next.add(char.id);
-                          return next;
-                        });
-                      }}
-                      className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors font-sans"
-                    >
-                      {expandedCharIds.has(char.id) ? (
-                        <ChevronDown className="w-3 h-3" />
-                      ) : (
-                        <ChevronRight className="w-3 h-3" />
-                      )}
-                      关联事件
-                      {allEvents.filter((ev) => ev.characterIds?.includes(char.id)).length > 0 && (
-                        <span className="ml-0.5 px-1 rounded bg-accent text-[9px]">
-                          {allEvents.filter((ev) => ev.characterIds?.includes(char.id)).length}
-                        </span>
-                      )}
-                    </button>
-                    {expandedCharIds.has(char.id) && (
-                      <div className="mt-1 space-y-0.5">
-                        {allEvents
-                          .filter((ev) => ev.characterIds?.includes(char.id))
-                          .map((ev) => (
-                            <div
-                              key={ev.id}
-                              className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] hover:bg-accent/50 transition-colors cursor-pointer group"
+              return (
+                <ContextMenu key={char.id}>
+                  <ContextMenuTrigger asChild>
+                    <div data-entity-id={char.id} onClick={() => handleCardClick(char)}>
+                      <TCard
+                        bordered
+                        hoverShadow
+                        size="small"
+                        className={`cursor-default transition-all ${
+                          isSelected ? 'ring-1 ring-primary/40 border-primary' : ''
+                        }`}
+                        avatar={
+                        <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                          <UserIcon size={28} />
+                        </div>
+                      }
+                      title={
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate">{char.name}</span>
+                          <TTag variant="light" size="small" theme={status.theme}>
+                            {status.label}
+                          </TTag>
+                        </div>
+                      }
+                      description={
+                        <div className="space-y-1">
+                          {char.role && (
+                            <div className="text-xs text-muted-foreground truncate">{char.role}</div>
+                          )}
+                          {char.description && (
+                            <div className="text-xs text-muted-foreground/70 line-clamp-2">{char.description}</div>
+                          )}
+                          {traits.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {traits.map((trait, i) => (
+                                <TTag key={i} variant="light" size="small" theme="default">
+                                  {trait}
+                                </TTag>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      }
+                      footer={
+                        <div className="flex items-center justify-between w-full">
+                          <TTag variant="light" size="small" theme="default">
+                            {traits.length} 特征
+                          </TTag>
+                          <div className="flex items-center gap-0.5">
+                            <TButton
+                              variant="text"
+                              shape="square"
+                              size="small"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openEventEditor(ev.id);
+                                startEditing(char);
                               }}
-                            >
-                              <span className="flex-1 truncate text-muted-foreground group-hover:text-foreground font-sans">
-                                {ev.title}
-                              </span>
-                              <span className="text-muted-foreground/60 font-mono shrink-0">
-                                {ev.startTime ? new Date(ev.startTime).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' }) : ''}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  scrollToEvent(ev.id);
-                                }}
-                                className="p-0.5 rounded hover:bg-accent text-muted-foreground/50 hover:text-primary transition-colors shrink-0"
-                                title="定位"
-                              >
-                                <MapPin className="w-2.5 h-2.5" />
-                              </button>
-                            </div>
-                          ))
-                        }
-                        {allEvents.filter((ev) => ev.characterIds?.includes(char.id)).length === 0 && (
-                          <div className="text-[10px] text-muted-foreground/60 font-sans px-1.5">暂无关联事件</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Delete confirmation */}
-              {isDeleting && !isEditing && (
-                <div className="px-3 py-2 border-t border-border bg-destructive/5">
-                  <div className="text-xs text-destructive font-sans mb-2">确定要删除角色「{char.name}」吗？</div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => confirmDelete(char.id)}
-                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md bg-destructive text-destructive-foreground text-xs hover:opacity-90 transition-opacity"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      确认删除
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeletingId(null)}
-                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-md border border-border text-xs hover:bg-accent transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      取消
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuItem icon={<Pencil className="w-4 h-4" />} onClick={() => startEditing(char)}>
-                  编辑
-                </ContextMenuItem>
-                <ContextMenuItem icon={<Trash2 className="w-4 h-4" />} destructive onClick={() => setDeletingId(char.id)}>
-                  删除
-                </ContextMenuItem>
-                <ContextMenuSeparator />
-                <ContextMenuItem icon={<Link className="w-4 h-4" />} onClick={() => setViewMode('timeline')}>
-                  查看关联事件
-                </ContextMenuItem>
-                <ContextMenuItem icon={<Sparkles className="w-4 h-4" />} onClick={() => setActivePanel('ai')}>
-                  AI 生成对话
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
-          );
-        })}
-        {(!characters || characters.length === 0) && (
-          <div className="text-center text-sm text-muted-foreground py-4 font-sans">暂无角色</div>
+                              icon={<EditIcon size={14} />}
+                            />
+                            <TButton
+                              variant="text"
+                              shape="square"
+                              size="small"
+                              theme="danger"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingId(char.id);
+                              }}
+                              icon={<DeleteIcon size={14} />}
+                            />
+                          </div>
+                        </div>
+                      }
+                    />
+                    </div>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    <ContextMenuItem icon={<EditIcon size={16} />} onClick={() => startEditing(char)}>
+                      编辑
+                    </ContextMenuItem>
+                    <ContextMenuItem icon={<DeleteIcon size={16} />} destructive onClick={() => setDeletingId(char.id)}>
+                      删除
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem icon={<LinkIcon size={16} />} onClick={() => setViewMode('timeline')}>
+                      查看关联事件
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-6 text-center">
+            <GroupIcon size={32} className="text-muted-foreground/40 mb-2" />
+            <p className="text-sm text-muted-foreground font-sans">暂无角色</p>
+            <p className="text-xs text-muted-foreground/70 font-sans mt-1">在上方创建第一个角色</p>
+          </div>
         )}
       </div>
+
+      <TDialog
+        visible={!!editingId}
+        onClose={cancelEditing}
+        header="编辑角色"
+        closeOnOverlayClick={false}
+        width="480px"
+        footer={
+          <div className="flex items-center gap-2">
+            <TButton
+              theme="primary"
+              size="small"
+              onClick={() => saveEdit(editingId!)}
+              disabled={!editName.trim() || updateCharacter.isPending}
+              icon={<CheckIcon size={14} />}
+            >
+              保存
+            </TButton>
+            <TButton variant="outline" size="small" onClick={cancelEditing} icon={<XIcon size={14} />}>
+              取消
+            </TButton>
+          </div>
+        }
+      >
+        <div className="space-y-3 py-2">
+          <TInput
+            value={editName}
+            onChange={(val) => setEditName((val ?? '').toString())}
+            placeholder="角色名称"
+            size="small"
+          />
+          <TInput
+            value={editRole}
+            onChange={(val) => setEditRole((val ?? '').toString())}
+            placeholder="角色身份"
+            size="small"
+          />
+          <TInput
+            value={editDescription}
+            onChange={(val) => setEditDescription((val ?? '').toString())}
+            placeholder="角色描述"
+            size="small"
+          />
+          <div>
+            <span className="text-xs text-muted-foreground">特征</span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {editTraits.map((trait, i) => (
+                <TTag key={i} variant="light" size="small" theme="default">
+                  {trait}
+                  <TButton
+                    variant="text"
+                    shape="square"
+                    size="small"
+                    className="ml-0.5 p-0 w-4 h-4 min-h-0"
+                    onClick={() => setEditTraits((prev) => prev.filter((_, idx) => idx !== i))}
+                    icon={<XIcon size={10} />}
+                  />
+                </TTag>
+              ))}
+            </div>
+            <div className="flex items-center gap-1 mt-1">
+              <TInput
+                value={newTrait}
+                onChange={(val) => setNewTrait((val ?? '').toString())}
+                onEnter={() => {
+                  if (newTrait.trim()) {
+                    setEditTraits((prev) => [...prev, newTrait.trim()]);
+                    setNewTrait('');
+                  }
+                }}
+                placeholder="添加特征"
+                size="small"
+                className="flex-1"
+              />
+              <TButton
+                theme="primary"
+                size="small"
+                onClick={() => {
+                  if (newTrait.trim()) {
+                    setEditTraits((prev) => [...prev, newTrait.trim()]);
+                    setNewTrait('');
+                  }
+                }}
+              >
+                添加
+              </TButton>
+            </div>
+          </div>
+        </div>
+      </TDialog>
+
+      {/* Delete confirmation modal */}
+      <TDialog
+        visible={!!deletingId}
+        onClose={() => setDeletingId(null)}
+        header="确认删除"
+        closeOnOverlayClick={false}
+        width="400px"
+        footer={
+          <div className="flex items-center gap-2 justify-center">
+            <TButton
+              theme="danger"
+              size="small"
+              onClick={() => confirmDelete(deletingId!)}
+              disabled={deleteCharacter.isPending}
+              icon={<DeleteIcon size={14} />}
+            >
+              {deleteCharacter.isPending ? '删除中...' : '确认删除'}
+            </TButton>
+            <TButton variant="outline" size="small" onClick={() => setDeletingId(null)} icon={<XIcon size={14} />}>
+              取消
+            </TButton>
+          </div>
+        }
+      >
+        <div className="text-center space-y-3 py-4">
+          <DeleteIcon size={28} className="mx-auto text-destructive" />
+          <p className="text-sm">确定要删除该角色吗？</p>
+        </div>
+      </TDialog>
     </div>
   );
 }

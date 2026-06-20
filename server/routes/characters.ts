@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { characters, eventCharacters, events } from '../db/schema.js';
-import { workspaceIdParam, characterIdParam, createCharacterBody, updateCharacterBody } from '../lib/validation.js';
+import { workspaceIdParam, characterIdParam, createCharacterBody, updateCharacterBody, validateWorkspaceExists } from '../lib/validation.js';
 import type { CreateCharacterRequest, UpdateCharacterRequest } from '../../shared/types.js';
 
 export async function charactersRoutes(app: FastifyInstance) {
@@ -22,6 +22,7 @@ export async function charactersRoutes(app: FastifyInstance) {
     schema: { params: workspaceIdParam, body: createCharacterBody },
   }, async (request, reply) => {
     const { workspaceId } = request.params;
+    if (!await validateWorkspaceExists(app, workspaceId, reply)) return;
     const { id: bodyId, name, role, description, avatarUrl, traitsJson } = request.body;
     const id = bodyId || uuidv4();
 

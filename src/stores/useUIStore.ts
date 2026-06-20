@@ -9,28 +9,32 @@ interface UIState {
   focusMode: boolean;
   commandPaletteOpen: boolean;
   settingsOpen: boolean;
+  detailEventId: string | null;
   setActivePanel: (panel: PanelType) => void;
   togglePanel: (panel: PanelType) => void;
   setPanelWidth: (width: number) => void;
   toggleFocusMode: () => void;
   setCommandPaletteOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
+  setDetailEvent: (id: string | null) => void;
 }
 
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
-      activePanel: 'properties',
+      activePanel: null,
       panelWidth: 360,
       focusMode: false,
       commandPaletteOpen: false,
       settingsOpen: false,
+      detailEventId: null,
       setActivePanel: (panel) => set({ activePanel: panel }),
       togglePanel: (panel) => set((s) => ({ activePanel: s.activePanel === panel ? null : panel })),
       setPanelWidth: (width) => set({ panelWidth: Math.max(280, Math.min(480, width)) }),
       toggleFocusMode: () => set((s) => ({ focusMode: !s.focusMode })),
       setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
       setSettingsOpen: (open) => set({ settingsOpen: open }),
+      setDetailEvent: (id) => set({ detailEventId: id }),
     }),
     { name: 'ui-storage', partialize: (s) => ({ panelWidth: s.panelWidth }) }
   )

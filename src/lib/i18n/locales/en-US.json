@@ -1,0 +1,94 @@
+{
+  "common": {
+    "appName": "Storyloom",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading…",
+    "search": "Search",
+    "settings": "Settings",
+    "close": "Close",
+    "rename": "Rename",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  "topbar": {
+    "newEvent": "New Event",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "themeSelector": "Theme",
+    "languageSelector": "Language",
+    "commandPalette": "Command Palette",
+    "shortcutSettings": "Shortcut Settings"
+  },
+  "views": {
+    "timeline": "Timeline",
+    "outline": "Outline",
+    "narrative": "Narrative",
+    "gantt": "Gantt",
+    "tree": "Tree",
+    "stats": "Stats",
+    "relationship": "Graph"
+  },
+  "panels": {
+    "characters": "Characters",
+    "worldview": "Worldview",
+    "foreshadowing": "Foreshadowing",
+    "ai": "AI Assistant"
+  },
+  "workspace": {
+    "createTitle": "New Workspace",
+    "namePlaceholder": "Workspace name",
+    "descriptionPlaceholder": "Description (optional)",
+    "fallbackName": "Untitled Workspace",
+    "fallbackDescription": "No description",
+    "deleteConfirm": "Delete workspace \"{{name}}\"? This cannot be undone."
+  },
+  "track": {
+    "createTitle": "New Track",
+    "namePlaceholder": "Track title",
+    "noTrack": "No events on this track"
+  },
+  "event": {
+    "createTitle": "New Event",
+    "editTitle": "Edit Event",
+    "titlePlaceholder": "Event title",
+    "summaryPlaceholder": "Summary",
+    "noEventHint": "Click the timeline to add an event"
+  },
+  "theme": {
+    "luosheng": "Luosheng",
+    "midnight": "Midnight",
+    "forest": "Forest",
+    "ink-wash": "Ink Wash",
+    "contrast": "High Contrast",
+    "system": "Follow System"
+  },
+  "update": {
+    "available": "New version {{version}} available",
+    "availableDesc": "Release notes:\n{{notes}}",
+    "downloadNow": "Download now",
+    "later": "Later",
+    "openReleasePage": "Open release page",
+    "downloading": "Downloading… {{percent}}%",
+    "downloaded": "Download complete. Restart to install?",
+    "installNow": "Restart and install",
+    "installLater": "Install on next start",
+    "currentVersion": "Current version",
+    "autoCheck": "Automatically check for updates on startup",
+    "autoCheckDesc": "Check for new versions automatically when the app starts",
+    "checkNow": "Check for updates",
+    "checking": "Checking for updates…",
+    "upToDate": "You're on the latest version v{{version}}",
+    "newVersion": "New version v{{version}} available",
+    "releaseNotes": "Release notes",
+    "download": "Download now",
+    "restartInstall": "Restart and install",
+    "devUnavailable": "Update is only available in the packaged build",
+    "errorMessage": "Update error: {{message}}"
+  }
+}
