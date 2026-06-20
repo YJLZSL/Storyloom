@@ -7,7 +7,32 @@
 
 ## [1.0.0] — 2026-06-20
 
-**全面前端重构 + 设计系统统一 + 视觉升级 + 教程大全 + 洛笙参考架构重构。**
+**全面前端重构 + 设计系统统一 + 视觉升级 + 教程大全 + 洛笙参考架构重构 + Zen Mode + 测试国际化。**
+
+### 新增功能
+- **Zen Mode 专注写作模式**：全屏沉浸式编辑，悬浮工具栏，实时字数统计，自动保存，快捷键支持（Esc 退出、Ctrl+S 保存）
+- **骨架屏 Loading 状态**：Timeline、WorkspaceSelector、StatsView 数据加载时显示精致骨架屏
+- **搜索历史**：CommandPalette 支持最近 8 条搜索历史记录，可一键清除
+- **改进的空状态设计**：所有面板统一使用插画 + 引导文字的精致空状态
+- **过渡动画**：面板切换、模态框、Tab 内容添加平滑进入/退出动画
+
+### 重构与优化
+- **API Hooks 工厂化**：`services/api-hooks.ts` 从 452 行精简至 200 行，使用 `createEntityHooks` 工厂函数生成 8 个资源的 CRUD hooks
+- **Store 状态统一**：消除 `useTimelineStore` 与 `useSelectionStore` 的双向耦合，`selectedEventId` / `selectedCharacterId` 统一到单一真相源
+- **TButton 图标修复**：修复 31 处 IconPark 与 TDesign 兼容性问题，`icon` 属性改为 children 方式
+
+### 测试
+- 新增 182 个测试用例，总计 193 个全部通过
+- 覆盖 9 个 Store、9 个 Lib 工具函数、4 个共享组件
+
+### 国际化
+- 修复 4 个关键组件（TopToolbar、LeftPanel、ContextPanel、EventContextPanel）硬编码中文字符串
+- 新增 60+ 翻译键（en-US / zh-CN）
+- 补充 6 个命名空间：panels、leftPanel、contextPanel、eventContext、workspace、topbar
+
+### 构建
+- 成功构建 NSIS 安装程序（`Storyloom Setup 1.0.0.exe`，126MB）
+- 支持自定义安装目录、桌面快捷方式、开始菜单快捷方式
 
 ### 洛笙参考架构重构（Phase A-F）
 - **三栏布局重构**：移除垂直 SideNav，改为「左栏目录 + 中栏内容 + 右栏关联」的横向三栏布局
