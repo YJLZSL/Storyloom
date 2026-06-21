@@ -1224,14 +1224,45 @@ code, kbd, pre, samp, .font-mono {
 /* ===== 移动端响应式规划 ===== */
 
 /* 移动端抽屉遮罩 */
+.mobile-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  z-index: var(--z-overlay);
 }
 
 /* 移动端底部 Sheet */
+.mobile-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 70vh;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  z-index: var(--z-overlay);
+}
 
 /* 触摸优化：增大点击区域 */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
 
 /* 移动端隐藏 */
 @media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+}
+
+/* PC 端隐藏 */
+@media (min-width: 769px) {
+  .hide-desktop { display: none !important; }
+}
+
+/* 移动端文字大小调整 */
+@media (max-width: 768px) {
+  :root {
+    --timeline-base-font-size: 14px;
+  }
 }
 
 /* ===== 额外精致化工具类 ===== */
@@ -1769,30 +1800,6 @@ code, kbd, pre, samp, .font-mono {
   100% { opacity: 0.6; transform: translateX(0%) scale(1.01); }
 }
 
-
-/* ===== 动画编排系统 (Animation Choreography v2) ===== */
-
-/* 列表逐项滑入 */
-
-/* 卡片弹性入场 */
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-.animated-gradient-border {
-  position: relative;
-  background: rgb(var(--card));
-  border-radius: var(--radius-lg);
-}
-.animated-gradient-border::before {
-  content: '';
-  position: absolute;
-  inset: -1.5px;
-  border-radius: calc(var(--radius-lg) + 1.5px);
-  background: linear-gradient(90deg, rgb(var(--primary)), rgb(var(--accent)), rgb(var(--primary)));
-  background-size: 200% 200%;
-  animation: gradient-border-rotate 3s ease infinite;
-  z-index: -1;
-}
 
 /* 减少动画偏好 */
 @media (prefers-reduced-motion: reduce) {
