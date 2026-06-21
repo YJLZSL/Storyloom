@@ -335,7 +335,7 @@ export function TimelineCanvas() {
                   height: tracksHeight,
                 }}
               >
-                {renderTracks.map((track, index) => (
+: 338                {renderTracks.map((track, index) => (
                   <TimelineTrack
                     key={track.id}
                     track={track}
@@ -348,12 +348,13 @@ export function TimelineCanvas() {
                     viewportWidth={viewport.width}
                     workspaceId={workspaceId}
                     isReadOnly={track.id === 'default'}
+                    onCreateTrack={() => setCreateTrackOpen(true)}
                     onResizeEnd={handleResizeEnd}
                     onDragEnd={handleDragEnd}
                   />
                 ))}
 
-                {showConnectionLines && (
+: 356                {showConnectionLines && (
                   <TimelineConnections
                     connections={connections || []}
                     events={events}
@@ -364,30 +365,33 @@ export function TimelineCanvas() {
                     contentHeight={tracksHeight}
                     viewportLeft={viewport.scrollLeft}
                     viewportWidth={viewport.width}
+                    zoom={zoom}
                   />
                 )}
 
                 {events.length === 0 && <TimelineEmptyState />}
 
-                <HiddenTracksPanel
-                  hiddenTracks={hiddenTracks}
-                  workspaceId={workspaceId}
-                  contentWidth={contentWidth + HEADER_WIDTH}
-                  tracksHeight={tracksHeight}
-                  onRestoreTrack={handleRestoreTrack}
-                  isPending={updateTrack.isPending}
-                />
               </div>
+
+              <HiddenTracksPanel
+                hiddenTracks={hiddenTracks}
+                workspaceId={workspaceId}
+                contentWidth={contentWidth + HEADER_WIDTH}
+                onRestoreTrack={handleRestoreTrack}
+                isPending={updateTrack.isPending}
+              />
             </div>
           )}
 
-          <TimelineMinimap
+: 384          <TimelineMinimap
             tracks={renderTracks}
             eventsByTrack={eventsByTrack}
             dataReferenceDateMs={dataReferenceDateMs}
             dataEndDateMs={dataEndDateMs}
             visibleDateRange={visibleDateRange}
             setVisibleDateRange={setVisibleDateRange}
+            scrollLeft={viewport.scrollLeft}
+            contentWidth={contentWidth + HEADER_WIDTH}
           />
         </div>
       )}

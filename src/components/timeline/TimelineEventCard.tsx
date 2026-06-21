@@ -263,7 +263,9 @@ export function TimelineEventCard({
         zIndex: isDragging ? 20 : isSelected ? 5 : isHovered ? 3 : 1,
         opacity: isDragging ? 0.88 : isDimmed ? 0.3 : 1,
         boxShadow: getShadowStyle(),
-        backgroundColor: 'rgb(var(--card) / 0.9)',
+        backgroundColor: event.color
+          ? `${event.color}18`
+          : 'rgb(var(--card) / 0.9)',
         transform: isSelected ? 'scale(1.01) translateY(-1px)' : isDragging ? 'rotate(1deg)' : undefined,
       }}
       initial={{ opacity: 0, scale: 0.96, y: 4 }}

@@ -8,7 +8,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/ContextMenu';
 import { TPopup } from '@/components/ui-tdesign';
-import { EditIcon, EyesIcon, EyesOffIcon, DeleteIcon, PaletteIcon } from '@/lib/icons';
+import { EditIcon, EyesIcon, EyesOffIcon, DeleteIcon, PaletteIcon, PlusIcon } from '@/lib/icons';
 import { useUpdateTrack, useDeleteTrack } from '@/services/api-hooks';
 import { useTrackStore } from '@/stores/useTrackStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
@@ -32,6 +32,7 @@ export interface TimelineTrackProps {
   viewportWidth: number;
   workspaceId: string | null;
   isReadOnly?: boolean;
+  onCreateTrack?: () => void;
   onResizeEnd: (eventId: string, startTime: number | null, endTime: number | null) => void;
   onDragEnd: (eventId: string, startTime: number, endTime: number | null) => void;
 }
@@ -47,6 +48,7 @@ export const TimelineTrack = memo(function TimelineTrack({
   viewportWidth,
   workspaceId,
   isReadOnly,
+  onCreateTrack,
   onResizeEnd,
   onDragEnd,
 }: TimelineTrackProps) {
@@ -255,6 +257,12 @@ export const TimelineTrack = memo(function TimelineTrack({
         <ContextMenu>
           <ContextMenuTrigger asChild>{headerInner}</ContextMenuTrigger>
           <ContextMenuContent>
+            <ContextMenuItem
+              icon={<PlusIcon size={14} />}
+              onSelect={() => onCreateTrack?.()}
+            >
+              新建轨道
+            </ContextMenuItem>
             <ContextMenuItem
               icon={<EditIcon size={14} />}
               onSelect={() => setEditingTrack(track.id)}

@@ -5,7 +5,6 @@ interface HiddenTracksPanelProps {
   hiddenTracks: Track[];
   workspaceId: string | null;
   contentWidth: number;
-  tracksHeight: number;
   onRestoreTrack: (trackId: string) => void;
   isPending: boolean;
 }
@@ -14,7 +13,6 @@ export function HiddenTracksPanel({
   hiddenTracks,
   workspaceId,
   contentWidth,
-  tracksHeight,
   onRestoreTrack,
   isPending,
 }: HiddenTracksPanelProps) {
@@ -22,11 +20,8 @@ export function HiddenTracksPanel({
 
   return (
     <div
-      className="absolute left-0 right-0 border-t-2 border-dashed border-border/50"
-      style={{
-        top: tracksHeight + 16,
-        width: contentWidth,
-      }}
+      className="relative border-t-2 border-dashed border-border/50"
+      style={{ width: contentWidth }}
     >
       <div className="px-4 py-2 bg-muted/20 backdrop-blur-sm">
         <div className="flex items-center gap-2 mb-2">

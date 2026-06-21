@@ -13,6 +13,7 @@ export interface TimelineConnectionsProps {
   contentHeight: number;
   viewportLeft: number;
   viewportWidth: number;
+  zoom: number;
 }
 
 interface EventPixelPos {
@@ -34,6 +35,7 @@ export function TimelineConnections({
   contentHeight,
   viewportLeft,
   viewportWidth,
+  zoom,
 }: TimelineConnectionsProps) {
   // Build event position map
   const eventPositions = useMemo(() => {
@@ -49,8 +51,8 @@ export function TimelineConnections({
       const x = (startMs - referenceDateMs) * pixelsPerMs + HEADER_WIDTH;
       const width = Math.max((endMs - startMs) * pixelsPerMs, 40);
       const trackIdx = event.trackId ? trackIndexMap.get(event.trackId) ?? 0 : 0;
-      const y = trackIdx * (TRACK_HEIGHT + TRACK_GAP) + 8;
-      const height = TRACK_HEIGHT - 16;
+      const y = trackIdx * (TRACK_HEIGHT * zoom + TRACK_GAP) + 8;
+      const height = TRACK_HEIGHT * zoom - 16;
 
       map.set(event.id, {
         x,
@@ -62,7 +64,7 @@ export function TimelineConnections({
       });
     }
     return map;
-  }, [events, tracks, pixelsPerMs, referenceDateMs]);
+  }, [events, tracks, pixelsPerMs, referenceDateMs, zoom]);
 
   // Filter and compute paths for visible connections
   const paths = useMemo(() => {

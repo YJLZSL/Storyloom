@@ -11,6 +11,8 @@ interface TimelineMinimapProps {
   dataEndDateMs: number;
   visibleDateRange: VisibleDateRange | null;
   setVisibleDateRange: (range: VisibleDateRange | null) => void;
+  scrollLeft: number;
+  contentWidth: number;
 }
 
 const MINIMAP_WIDTH = 200;
@@ -28,6 +30,8 @@ export function TimelineMinimap({
   dataEndDateMs,
   visibleDateRange,
   setVisibleDateRange,
+  scrollLeft,
+  contentWidth,
 }: TimelineMinimapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -55,15 +59,18 @@ export function TimelineMinimap({
   const svgHeight = innerHeight + PADDING * 2;
 
   const visibleWindow = useMemo(() => {
-    if (!visibleDateRange) {
-      return { x: 0, width: INNER_WIDTH };
+    if (visibleDateRange) {
+      const start = Math.max(visibleDateRange.startMs, dataReferenceDateMs);
+      const end = Math.min(visibleDateRange.endMs, dataEndDateMs);
+      const x = ((start - dataReferenceDateMs) / totalSpan) * INNER_WIDTH;
+      const width = Math.max(((end - start) / totalSpan) * INNER_WIDTH, 2);
+      return { x, width };
     }
-    const start = Math.max(visibleDateRange.startMs, dataReferenceDateMs);
-    const end = Math.min(visibleDateRange.endMs, dataEndDateMs);
-    const x = ((start - dataReferenceDateMs) / totalSpan) * INNER_WIDTH;
-    const width = Math.max(((end - start) / totalSpan) * INNER_WIDTH, 2);
+    // 根据滚动位置计算视口窗口
+    const x = (scrollLeft / contentWidth) * INNER_WIDTH;
+    const width = Math.max((window.innerWidth / contentWidth) * INNER_WIDTH, 2);
     return { x, width };
-  }, [visibleDateRange, dataReferenceDateMs, dataEndDateMs, totalSpan]);
+  }, [visibleDateRange, dataReferenceDateMs, dataEndDateMs, totalSpan, scrollLeft, contentWidth]);
 
   const setCenteredRange = useCallback(
     (centerMs: number, spanMs: number) => {

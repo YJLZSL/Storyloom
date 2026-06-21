@@ -39,7 +39,7 @@ function truncate(text: string, max: number): string {
 }
 
 function getConnectionColor(type: string): string {
-  return getTreeConnectionColor(type) ?? 'var(--border)';
+  return getTreeConnectionColor(type) ?? 'hsl(var(--border))';
 }
 
 export function TreeTimelineView() {
@@ -173,8 +173,8 @@ export function TreeTimelineView() {
                   height={NODE_HEIGHT}
                   rx={8}
                   ry={8}
-                  fill="var(--card)"
-                  stroke={isSelected ? 'var(--primary)' : 'var(--border)'}
+                  fill="hsl(var(--card))"
+                  stroke={isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))'}
                   strokeWidth={isSelected ? 3 : 1}
                 />
                 {event.color && (
@@ -192,7 +192,7 @@ export function TreeTimelineView() {
                   x={14}
                   y={22}
                   className="text-sm font-medium"
-                  fill="var(--foreground)"
+                  fill="hsl(var(--foreground))"
                   style={{ fontSize: 13, fontWeight: 500 }}
                 >
                   {label}
@@ -201,7 +201,7 @@ export function TreeTimelineView() {
                   x={14}
                   y={42}
                   className="text-xs"
-                  fill="var(--muted-foreground)"
+                  fill="hsl(var(--muted-foreground))"
                   style={{ fontSize: 11 }}
                 >
                   {dateLabel}
