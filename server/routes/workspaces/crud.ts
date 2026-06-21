@@ -61,20 +61,35 @@ function validateWorkspaceInput(
 }
 
 export const crudRoutes: FastifyPluginAsync = async (app) => {
-  app.get('/', async () => {
-    const result = app.db.select().from(workspaces).orderBy(desc(workspaces.updatedAt)).all();
-    return { success: true, data: result };
+  app.get('/', async (request, reply) => {
+    try {
+      app.log.info('[GET /workspaces] 查询所有工作区');
+      const result = app.db.select().from(workspaces).orderBy(desc(workspaces.updatedAt)).all();
+      app.log.info({ count: result.length }, '[GET /workspaces] 查询成功');
+      return { success: true, data: result };
+    } catch (err: any) {
+      app.log.error({ err: err.message }, '[GET /workspaces] 查询失败');
+      return reply.status(500).send({ success: false, error: { code: 'QUERY_FAILED', message: '查询工作区失败' } });
+    }
   });
 
   app.get<{ Params: { id: string } }>('/:id', {
     schema: { params: idParam },
   }, async (request, reply) => {
     const { id } = request.params;
-    const result = app.db.select().from(workspaces).where(eq(workspaces.id, id)).get();
-    if (!result) {
-      return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: '工作区不存在' } });
+    try {
+      app.log.info({ workspaceId: id }, '[GET /workspaces/:id] 查询工作区');
+      const result = app.db.select().from(workspaces).where(eq(workspaces.id, id)).get();
+      if (!result) {
+        app.log.warn({ workspaceId: id }, '[GET /workspaces/:id] 工作区不存在');
+        return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: '工作区不存在' } });
+      }
+      app.log.info({ workspaceId: id, name: result.name }, '[GET /workspaces/:id] 查询成功');
+      return { success: true, data: result };
+    } catch (err: any) {
+      app.log.error({ err: err.message, workspaceId: id }, '[GET /workspaces/:id] 查询失败');
+      return reply.status(500).send({ success: false, error: { code: 'QUERY_FAILED', message: '查询工作区失败' } });
     }
-    return { success: true, data: result };
   });
 
   app.post<{ Body: CreateWorkspaceRequest }>('/', {
@@ -84,32 +99,42 @@ export const crudRoutes: FastifyPluginAsync = async (app) => {
 
     const validation = validateWorkspaceInput({ name, description }, true);
     if (!validation.valid) {
-      return reply.status(400).send({ error: validation.message });
+      app.log.warn({ reason: validation.message }, '[POST /workspaces] 校验失败');
+      return reply.status(400).send({ success: false, error: { code: 'VALIDATION_FAILED', message: validation.message } });
     }
 
-    const now = new Date();
-    const id = uuidv4();
+    try {
+      const now = new Date();
+      const id = uuidv4();
+      app.log.info({ name, workspaceId: id }, '[POST /workspaces] 开始创建工作区');
 
-    const result = app.db.insert(workspaces).values({
-      id,
-      name,
-      description: description || '',
-      settingsJson: '{}',
-      createdAt: now,
-      updatedAt: now,
-    }).returning().get();
+      const result = app.db.insert(workspaces).values({
+        id,
+        name,
+        description: description || '',
+        settingsJson: '{}',
+        createdAt: now,
+        updatedAt: now,
+      }).returning().get();
 
-    const defaultTrackId = uuidv4();
-    app.db.insert(tracks).values({
-      id: defaultTrackId,
-      workspaceId: id,
-      name: '主线',
-      color: '#3b82f6',
-      orderIndex: 0,
-      isVisible: true,
-    }).run();
+      app.log.info({ workspaceId: id }, '[POST /workspaces] 工作区创建成功，准备创建默认轨道');
 
-    return { success: true, data: result };
+      const defaultTrackId = uuidv4();
+      app.db.insert(tracks).values({
+        id: defaultTrackId,
+        workspaceId: id,
+        name: '主线',
+        color: '#3b82f6',
+        orderIndex: 0,
+        isVisible: true,
+      }).run();
+
+      app.log.info({ workspaceId: id, trackId: defaultTrackId }, '[POST /workspaces] 默认轨道创建成功');
+      return { success: true, data: result };
+    } catch (err: any) {
+      app.log.error({ err: err.message }, '[POST /workspaces] 创建工作区失败');
+      return reply.status(500).send({ success: false, error: { code: 'CREATE_FAILED', message: `创建工作区失败: ${err.message}` } });
+    }
   });
 
   app.patch<{ Params: { id: string }; Body: UpdateWorkspaceRequest }>('/:id', {
@@ -118,27 +143,37 @@ export const crudRoutes: FastifyPluginAsync = async (app) => {
     const { id } = request.params;
     const updates = request.body;
 
-    const existing = app.db.select().from(workspaces).where(eq(workspaces.id, id)).get();
-    if (!existing) {
-      return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: '工作区不存在' } });
+    try {
+      app.log.info({ workspaceId: id, updates }, '[PATCH /workspaces/:id] 开始更新工作区');
+
+      const existing = app.db.select().from(workspaces).where(eq(workspaces.id, id)).get();
+      if (!existing) {
+        app.log.warn({ workspaceId: id }, '[PATCH /workspaces/:id] 工作区不存在');
+        return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: '工作区不存在' } });
+      }
+
+      const validation = validateWorkspaceInput(updates as Partial<Record<string, unknown>>, false);
+      if (!validation.valid) {
+        app.log.warn({ reason: validation.message }, '[PATCH /workspaces/:id] 校验失败');
+        return reply.status(400).send({ success: false, error: { code: 'VALIDATION_FAILED', message: validation.message } });
+      }
+
+      const allowedFields: Record<string, unknown> = {};
+      if (updates.name !== undefined) allowedFields.name = updates.name;
+      if (updates.description !== undefined) allowedFields.description = updates.description;
+      if (updates.settingsJson !== undefined) allowedFields.settingsJson = updates.settingsJson;
+      if (updates.calendarConfigJson !== undefined) allowedFields.calendarConfigJson = updates.calendarConfigJson;
+      const result = app.db.update(workspaces).set({
+        ...allowedFields,
+        updatedAt: new Date(),
+      }).where(eq(workspaces.id, id)).returning().get();
+
+      app.log.info({ workspaceId: id, name: result.name }, '[PATCH /workspaces/:id] 更新成功');
+      return { success: true, data: result };
+    } catch (err: any) {
+      app.log.error({ err: err.message, workspaceId: id }, '[PATCH /workspaces/:id] 更新失败');
+      return reply.status(500).send({ success: false, error: { code: 'UPDATE_FAILED', message: `更新工作区失败: ${err.message}` } });
     }
-
-    const validation = validateWorkspaceInput(updates as Partial<Record<string, unknown>>, false);
-    if (!validation.valid) {
-      return reply.status(400).send({ error: validation.message });
-    }
-
-    const allowedFields: Record<string, unknown> = {};
-    if (updates.name !== undefined) allowedFields.name = updates.name;
-    if (updates.description !== undefined) allowedFields.description = updates.description;
-    if (updates.settingsJson !== undefined) allowedFields.settingsJson = updates.settingsJson;
-    if (updates.calendarConfigJson !== undefined) allowedFields.calendarConfigJson = updates.calendarConfigJson;
-    const result = app.db.update(workspaces).set({
-      ...allowedFields,
-      updatedAt: new Date(),
-    }).where(eq(workspaces.id, id)).returning().get();
-
-    return { success: true, data: result };
   });
 
   app.delete<{ Params: { id: string } }>('/:id', {
@@ -151,29 +186,52 @@ export const crudRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: '工作区不存在' } });
     }
 
+    app.log.info({ workspaceId: id }, '[DELETE] 开始删除工作区');
+
     try {
       app.sqlite.transaction(() => {
-        app.db.delete(events).where(eq(events.workspaceId, id)).run();
-        app.db.delete(tracks).where(eq(tracks.workspaceId, id)).run();
-        app.db.delete(characters).where(eq(characters.workspaceId, id)).run();
-        app.db.delete(connections).where(eq(connections.workspaceId, id)).run();
-        app.db.delete(foreshadowings).where(eq(foreshadowings.workspaceId, id)).run();
-        app.db.delete(worldSettings).where(eq(worldSettings.workspaceId, id)).run();
-        app.db.delete(autoSaves).where(eq(autoSaves.workspaceId, id)).run();
-        app.db.delete(outlineVersions).where(eq(outlineVersions.workspaceId, id)).run();
-        app.db.delete(flags).where(eq(flags.workspaceId, id)).run();
-        app.db.delete(scenes).where(eq(scenes.workspaceId, id)).run();
-        app.db.delete(maps).where(eq(maps.workspaceId, id)).run();
-        app.db.delete(assets).where(eq(assets.workspaceId, id)).run();
-        try { app.db.delete(bookmarks).where(eq(bookmarks.workspaceId, id)).run(); } catch (e) { /* 表可能不存在 */ }
+        const tables = [
+          { name: 'events', table: events },
+          { name: 'tracks', table: tracks },
+          { name: 'characters', table: characters },
+          { name: 'connections', table: connections },
+          { name: 'foreshadowings', table: foreshadowings },
+          { name: 'worldSettings', table: worldSettings },
+          { name: 'autoSaves', table: autoSaves },
+          { name: 'outlineVersions', table: outlineVersions },
+          { name: 'flags', table: flags },
+          { name: 'scenes', table: scenes },
+          { name: 'maps', table: maps },
+          { name: 'assets', table: assets },
+          { name: 'bookmarks', table: bookmarks },
+        ];
+
+        for (const { name, table } of tables) {
+          try {
+            app.db.delete(table).where(eq(table.workspaceId, id)).run();
+            app.log.info({ table: name, workspaceId: id }, '[DELETE] 表已清理');
+          } catch (err: any) {
+            // 表可能不存在，记录但不中断
+            app.log.warn({ table: name, err: err.message, workspaceId: id }, '[DELETE] 表清理失败（已忽略）');
+          }
+        }
+
         // 清理没有 Drizzle schema 定义的表（仅硬编码 DDL）
-        try { app.sqlite.prepare('DELETE FROM revisions WHERE workspace_id = ?').run(id); } catch (e) { /* 表可能不存在 */ }
-        try { app.sqlite.prepare('DELETE FROM ai_conversations WHERE workspace_id = ?').run(id); } catch (e) { /* 表可能不存在 */ }
-        try { app.sqlite.prepare('DELETE FROM ai_cache WHERE workspace_id = ?').run(id); } catch (e) { /* 表可能不存在 */ }
+        const rawTables = ['revisions', 'ai_conversations', 'ai_cache', 'event_characters', 'event_world_settings', 'event_assets', 'character_assets', 'scene_assets', 'beats', 'choices'];
+        for (const rawTable of rawTables) {
+          try {
+            app.sqlite.prepare(`DELETE FROM ${rawTable} WHERE workspace_id = ?`).run(id);
+            app.log.info({ table: rawTable, workspaceId: id }, '[DELETE] 原始表已清理');
+          } catch (err: any) {
+            app.log.warn({ table: rawTable, err: err.message, workspaceId: id }, '[DELETE] 原始表清理失败（已忽略）');
+          }
+        }
+
         app.db.delete(workspaces).where(eq(workspaces.id, id)).run();
+        app.log.info({ workspaceId: id }, '[DELETE] 工作区已删除');
       })();
     } catch (err: any) {
-      app.log.error({ err: err.message, workspaceId: id }, '删除工作区失败');
+      app.log.error({ err: err.message, workspaceId: id }, '[DELETE] 删除工作区失败');
       return reply.status(500).send({
         success: false,
         error: { code: 'DELETE_FAILED', message: `删除工作区失败: ${err.message}` },

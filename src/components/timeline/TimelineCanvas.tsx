@@ -1,12 +1,8 @@
 import { useRef, useCallback, useEffect, useState, useMemo } from 'react';
-import { DateRangePicker } from 'tdesign-react';
-import type { DateRangeValue } from 'tdesign-react';
-import { PlusIcon, SettingConfigIcon, EyesIcon, IdeaIcon } from '@/lib/icons';
-import { TButton, TTooltip } from '@/components/ui-tdesign';
+import { PlusIcon } from '@/lib/icons';
+import { TButton } from '@/components/ui-tdesign';
 import { TrackManagerDialog } from './TrackManagerDialog';
 import { useEvents, useTracks, useConnections, useUpdateEvent, useUpdateTrack } from '@/services/api-hooks';
-import { Skeleton } from '@/components/_shared/Skeleton';
-import { EmptyState } from '@/components/_shared/EmptyState';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTimelineStore } from '@/stores/useTimelineStore';
 import { useUIStore } from '@/stores/useUIStore';
@@ -16,6 +12,10 @@ import { TimelineTrack, TRACK_HEIGHT, TRACK_GAP, HEADER_WIDTH } from './Timeline
 import { TimelineConnections } from './TimelineConnections';
 import { TimelineMinimap } from './TimelineMinimap';
 import { CreateTrackDialog } from './CreateTrackDialog';
+import { EmptyState } from '@/components/_shared/EmptyState';
+import { TimelineToolbar } from './TimelineToolbar';
+import { TimelineSkeleton } from './TimelineSkeleton';
+import { HiddenTracksPanel } from './HiddenTracksPanel';
 import { toast } from 'sonner';
 import type { Track as TrackType, TimelineEvent } from '../../../shared/types';
 
@@ -24,14 +24,6 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const PADDING_MS = MS_PER_DAY;
 const WHEEL_ZOOM_STEP = 0.05;
 const WHEEL_PAN_FACTOR = 2;
-
-function toDateString(ms: number): string {
-  const d = new Date(ms);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 export function TimelineCanvas() {
   const workspaceId = useWorkspaceStore((s) => s.currentWorkspaceId);
@@ -48,6 +40,7 @@ export function TimelineCanvas() {
   const { data: tracks, isLoading: isLoadingTracks } = useTracks(workspaceId);
   const { data: connections } = useConnections(workspaceId);
   const updateEventMutation = useUpdateEvent();
+  const updateTrack = useUpdateTrack();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [viewport, setViewport] = useState({ scrollLeft: 0, width: 0, scrollTop: 0, height: 0 });
@@ -57,7 +50,6 @@ export function TimelineCanvas() {
 
   const events = eventsData?.items || [];
   const allTracks: TrackType[] = tracks || [];
-  const updateTrack = useUpdateTrack();
 
   const dataReferenceDateMs = useMemo(() => {
     const times = events
@@ -223,26 +215,26 @@ export function TimelineCanvas() {
     return () => cancelAnimationFrame(raf);
   }, [scrollToEventId, events, renderTracks, referenceDateMs, pixelsPerMs, scrollToEvent, zoom]);
 
-  const dateRangeValue: DateRangeValue = visibleDateRange
-    ? [toDateString(visibleDateRange.startMs), toDateString(visibleDateRange.endMs)]
-    : [];
-
-  const handleDateRangeChange = (value: DateRangeValue) => {
-    if (!value || value.length !== 2 || !value[0] || !value[1]) {
-      setVisibleDateRange(null);
-      return;
-    }
-    const start = value[0] instanceof Date ? value[0] : new Date(String(value[0]));
-    const end = value[1] instanceof Date ? value[1] : new Date(String(value[1]));
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      setVisibleDateRange(null);
-      return;
-    }
-    end.setHours(23, 59, 59, 999);
-    setVisibleDateRange({ startMs: start.getTime(), endMs: end.getTime() });
-  };
-
   const showEmptyState = allTracks.length === 0;
+
+  const handleRestoreTrack = useCallback(
+    (trackId: string) => {
+      if (!workspaceId) return;
+      updateTrack.mutate(
+        { workspaceId, trackId, data: { isVisible: true } },
+        {
+          onSuccess: (_: unknown, vars: { trackId: string }) => {
+            const track = allTracks.find((t) => t.id === vars.trackId);
+            toast.success(`轨道「${track?.name || '未知'}」已恢复显示`);
+          },
+          onError: (err: Error) => {
+            toast.error(`恢复轨道失败: ${err.message}`);
+          },
+        }
+      );
+    },
+    [workspaceId, updateTrack, allTracks]
+  );
 
   const canvasStyle = {
     '--zoom': zoom,
@@ -250,70 +242,15 @@ export function TimelineCanvas() {
 
   return (
     <div className="flex flex-col h-full w-full zoom-smooth" style={canvasStyle}>
-      {/* Top toolbar */}
-      <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b border-border bg-card/80">
-        <TButton
-          theme="success"
-          size="small"
-          icon={<PlusIcon size={14} />}
-          onClick={() => setCreateTrackOpen(true)}
-          disabled={!workspaceId}
-        >
-          新建轨道
-        </TButton>
+      <TimelineToolbar
+        workspaceId={workspaceId}
+        visibleDateRange={visibleDateRange}
+        onDateRangeChange={setVisibleDateRange}
+        onCreateTrack={() => setCreateTrackOpen(true)}
+        onOpenTrackManager={() => setTrackManagerOpen(true)}
+      />
 
-        <TButton
-          theme="default"
-          variant="outline"
-          size="small"
-          icon={<SettingConfigIcon size={14} />}
-          disabled={!workspaceId}
-          onClick={() => setTrackManagerOpen(true)}
-        >
-          时间线管理
-        </TButton>
-
-        <div className="flex items-center gap-2 ml-auto">
-          <TTooltip content="Ctrl + 滚轮 = 缩放 | 滚轮 = 水平滚动" placement="bottom">
-            <button className="flex size-7 items-center justify-center rounded-lg text-muted-foreground/60 transition hover:bg-muted/80 hover:text-foreground">
-              <IdeaIcon size={16} />
-            </button>
-          </TTooltip>
-          <span className="text-xs text-muted-foreground">显示范围：</span>
-          <DateRangePicker
-            value={dateRangeValue}
-            onChange={handleDateRangeChange}
-            format="YYYY-MM-DD"
-            clearable
-            placeholder={['开始日期', '结束日期']}
-            size="small"
-          />
-        </div>
-      </div>
-
-      {/* Loading skeleton */}
-      {(isLoadingEvents || isLoadingTracks) && (
-        <div className="flex-1 p-4">
-          <div className="flex gap-2 mb-4">
-            <Skeleton variant="text" className="w-32 h-6" />
-            <Skeleton variant="text" className="w-20 h-6" />
-            <div className="ml-auto flex gap-2">
-              <Skeleton variant="circle" className="h-8 w-8" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <Skeleton variant="text" className="w-[160px] h-10" />
-                <div className="flex-1 flex gap-2">
-                  <Skeleton variant="card" className="h-16 flex-1" />
-                  <Skeleton variant="card" className="h-16 flex-1" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {(isLoadingEvents || isLoadingTracks) && <TimelineSkeleton />}
 
       {!isLoadingEvents && !isLoadingTracks && (
         <div
@@ -345,162 +282,115 @@ export function TimelineCanvas() {
             }
           }}
         >
-        {/* Theme texture overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-50"
-          style={{
-            backgroundImage: 'var(--theme-texture)',
-            backgroundSize: 'var(--theme-texture-size)',
-          }}
-        />
-        {showEmptyState ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10 empty-state-refined">
-            <EmptyState
-              size="lg"
-              icon={<PlusIcon size={36} className="text-primary/70" />}
-              title="还没有轨道"
-              description='点击上方"新建轨道"创建第一条轨道，开始组织你的故事时间线'
-              action={
-                <TButton
-                  theme="success"
-                  size="small"
-                  icon={<PlusIcon size={16} />}
-                  onClick={() => setCreateTrackOpen(true)}
-                  disabled={!workspaceId}
-                >
-                  新建轨道
-                </TButton>
-              }
-              className="max-w-md w-full card-hover-shadow"
-            />
-          </div>
-        ) : (
           <div
-            className="relative"
+            className="pointer-events-none absolute inset-0 opacity-50"
             style={{
-              width: contentWidth + HEADER_WIDTH,
-              minHeight: '100%',
+              backgroundImage: 'var(--theme-texture)',
+              backgroundSize: 'var(--theme-texture-size)',
             }}
-          >
-            <div className="sticky top-0 z-30">
-              <TimelineRuler
-                pixelsPerMs={pixelsPerMs}
-                referenceDateMs={referenceDateMs}
-                contentWidth={contentWidth}
-                viewportLeft={viewport.scrollLeft}
-                viewportWidth={viewport.width}
+          />
+          {showEmptyState ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10 empty-state-refined">
+              <EmptyState
+                size="lg"
+                icon={<PlusIcon size={36} className="text-primary/70" />}
+                title="还没有轨道"
+                description='点击上方"新建轨道"创建第一条轨道，开始组织你的故事时间线'
+                action={
+                  <TButton
+                    theme="success"
+                    size="small"
+                    icon={<PlusIcon size={16} />}
+                    onClick={() => setCreateTrackOpen(true)}
+                    disabled={!workspaceId}
+                  >
+                    新建轨道
+                  </TButton>
+                }
+                className="max-w-md w-full card-hover-shadow"
               />
             </div>
-
+          ) : (
             <div
               className="relative"
               style={{
                 width: contentWidth + HEADER_WIDTH,
-                height: tracksHeight,
+                minHeight: '100%',
               }}
             >
-              {renderTracks.map((track, index) => (
-                <TimelineTrack
-                  key={track.id}
-                  track={track}
-                  events={eventsByTrack.get(track.id) || []}
-                  allTracks={visibleTracks}
-                  trackIndex={index}
+              <div className="sticky top-0 z-30">
+                <TimelineRuler
                   pixelsPerMs={pixelsPerMs}
                   referenceDateMs={referenceDateMs}
                   contentWidth={contentWidth}
                   viewportLeft={viewport.scrollLeft}
                   viewportWidth={viewport.width}
+                />
+              </div>
+
+              <div
+                className="relative"
+                style={{
+                  width: contentWidth + HEADER_WIDTH,
+                  height: tracksHeight,
+                }}
+              >
+                {renderTracks.map((track, index) => (
+                  <TimelineTrack
+                    key={track.id}
+                    track={track}
+                    events={eventsByTrack.get(track.id) || []}
+                    allTracks={visibleTracks}
+                    trackIndex={index}
+                    pixelsPerMs={pixelsPerMs}
+                    referenceDateMs={referenceDateMs}
+                    contentWidth={contentWidth}
+                    viewportLeft={viewport.scrollLeft}
+                    viewportWidth={viewport.width}
+                    workspaceId={workspaceId}
+                    isReadOnly={track.id === 'default'}
+                    onResizeEnd={handleResizeEnd}
+                    onDragEnd={handleDragEnd}
+                  />
+                ))}
+
+                {showConnectionLines && (
+                  <TimelineConnections
+                    connections={connections || []}
+                    events={events}
+                    tracks={renderTracks}
+                    pixelsPerMs={pixelsPerMs}
+                    referenceDateMs={referenceDateMs}
+                    contentWidth={contentWidth}
+                    contentHeight={tracksHeight}
+                    viewportLeft={viewport.scrollLeft}
+                    viewportWidth={viewport.width}
+                  />
+                )}
+
+                {events.length === 0 && <TimelineEmptyState />}
+
+                <HiddenTracksPanel
+                  hiddenTracks={hiddenTracks}
                   workspaceId={workspaceId}
-                  isReadOnly={track.id === 'default'}
-                  onResizeEnd={handleResizeEnd}
-                  onDragEnd={handleDragEnd}
+                  contentWidth={contentWidth + HEADER_WIDTH}
+                  tracksHeight={tracksHeight}
+                  onRestoreTrack={handleRestoreTrack}
+                  isPending={updateTrack.isPending}
                 />
-              ))}
-
-              {showConnectionLines && (
-                <TimelineConnections
-                  connections={connections || []}
-                  events={events}
-                  tracks={renderTracks}
-                  pixelsPerMs={pixelsPerMs}
-                  referenceDateMs={referenceDateMs}
-                  contentWidth={contentWidth}
-                  contentHeight={tracksHeight}
-                  viewportLeft={viewport.scrollLeft}
-                  viewportWidth={viewport.width}
-                />
-              )}
-
-              {events.length === 0 && <TimelineEmptyState />}
-
-              {/* 隐藏轨道管理区域 */}
-              {hiddenTracks.length > 0 && workspaceId && (
-                <div
-                  className="absolute left-0 right-0 border-t-2 border-dashed border-border/50"
-                  style={{
-                    top: tracksHeight + 16,
-                    width: contentWidth + HEADER_WIDTH,
-                  }}
-                >
-                  <div className="px-4 py-2 bg-muted/20 backdrop-blur-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        已隐藏 {hiddenTracks.length} 条轨道
-                      </span>
-                      <span className="text-[10px] text-muted-foreground/60">点击恢复显示</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {hiddenTracks.map((track) => (
-                        <button
-                          key={track.id}
-                          disabled={updateTrack.isPending}
-                          className="relative z-10 pointer-events-auto inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border border-border bg-background transition hover:bg-accent hover:text-accent-foreground active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation();
-                            updateTrack.mutate(
-                              {
-                                workspaceId,
-                                trackId: track.id,
-                                data: { isVisible: true },
-                              },
-                              {
-                                onSuccess: () => {
-                                  toast.success(`轨道「${track.name}」已恢复显示`);
-                                },
-                                onError: (err) => {
-                                  toast.error(`恢复轨道失败: ${err.message}`);
-                                },
-                              }
-                            );
-                          }}
-                        >
-                          <EyesIcon size={16} />
-                          <span
-                            className="max-w-[120px] truncate"
-                            style={{ color: track.color || undefined }}
-                          >
-                            {track.name}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        <TimelineMinimap
-          tracks={renderTracks}
-          eventsByTrack={eventsByTrack}
-          dataReferenceDateMs={dataReferenceDateMs}
-          dataEndDateMs={dataEndDateMs}
-          visibleDateRange={visibleDateRange}
-          setVisibleDateRange={setVisibleDateRange}
-        />
-      </div>
+          <TimelineMinimap
+            tracks={renderTracks}
+            eventsByTrack={eventsByTrack}
+            dataReferenceDateMs={dataReferenceDateMs}
+            dataEndDateMs={dataEndDateMs}
+            visibleDateRange={visibleDateRange}
+            setVisibleDateRange={setVisibleDateRange}
+          />
+        </div>
       )}
 
       {workspaceId && (
