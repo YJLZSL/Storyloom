@@ -36,12 +36,11 @@ npm run dist         # 完整 Windows 安装包
 
 ## 文档
 
-- [`CHANGELOG.md`](./CHANGELOG.md) — 全部版本历史与归档说明
-- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — 模块拓扑与代码地图
-- [`docs/DEVELOPMENT.md`](./docs/DEVELOPMENT.md) — 本地开发与常见坑
-- [`docs/RELEASING.md`](./docs/RELEASING.md) — 标准发版流程
-- [`docs/tutorials/`](./docs/tutorials/) — 用户教程大全（入门指南、各视图详解、快捷键、AI 助手等）
-- [`docs/audit/`](./docs/audit/) — 代码异味、品牌决策等审计资料
+- [`更新日志.md`](./更新日志.md) — 全部版本历史与归档说明
+- [`docs/架构设计.md`](./docs/架构设计.md) — 模块拓扑与代码地图
+- [`docs/开发指南.md`](./docs/开发指南.md) — 本地开发与常见坑
+- [`docs/发版指南.md`](./docs/发版指南.md) — 标准发版流程
+- [`docs/README.md`](./docs/README.md) — 文档导航大全
 - [`.trae/documents/handoff-frontend-aesthetics.md`](./.trae/documents/handoff-frontend-aesthetics.md) — 前端重构交接文档
 
 ## License
