@@ -561,7 +561,29 @@ code, kbd, pre, samp, .font-mono {
 .t-button {
   border-radius: var(--radius-md);
   font-weight: var(--theme-font-weight, 400);
+  font-family: inherit;
   transition: all var(--duration-fast) var(--ease-out);
+}
+
+/* TDesign 组件字体统一继承 */
+.t-input,
+.t-textarea,
+.t-select,
+.t-select-input,
+.t-date-picker,
+.t-dialog,
+.t-drawer,
+.t-tabs,
+.t-menu,
+.t-tag,
+.t-badge,
+.t-list,
+.t-card,
+.t-popup,
+.t-tooltip,
+.t-message,
+.t-notification {
+  font-family: inherit;
 }
 
 .t-button--variant-base.t-button--theme-primary {

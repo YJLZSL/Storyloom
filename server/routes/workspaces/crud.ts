@@ -165,7 +165,7 @@ export const crudRoutes: FastifyPluginAsync = async (app) => {
         app.db.delete(scenes).where(eq(scenes.workspaceId, id)).run();
         app.db.delete(maps).where(eq(maps.workspaceId, id)).run();
         app.db.delete(assets).where(eq(assets.workspaceId, id)).run();
-        app.db.delete(bookmarks).where(eq(bookmarks.workspaceId, id)).run();
+        try { app.db.delete(bookmarks).where(eq(bookmarks.workspaceId, id)).run(); } catch (e) { /* 表可能不存在 */ }
         // 清理没有 Drizzle schema 定义的表（仅硬编码 DDL）
         try { app.sqlite.prepare('DELETE FROM revisions WHERE workspace_id = ?').run(id); } catch (e) { /* 表可能不存在 */ }
         try { app.sqlite.prepare('DELETE FROM ai_conversations WHERE workspace_id = ?').run(id); } catch (e) { /* 表可能不存在 */ }

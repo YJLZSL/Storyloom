@@ -49,7 +49,9 @@
     "ai": "AI Assistant",
     "connections": "Connections",
     "consistency": "Consistency",
-    "eventEditor": "Event Editor"
+    "eventEditor": "Event Editor",
+    "bookmarks": "Bookmarks",
+    "maps": "Maps"
   },
   "workspace": {
     "createTitle": "New Workspace",
@@ -67,7 +69,8 @@
     "deleted": "Deleted",
     "deleteFailed": "Failed to delete",
     "selectPlaceholder": "Select workspace",
-    "deleteConfirmShort": "Delete this workspace? This cannot be undone."
+    "deleteConfirmShort": "Delete this workspace? This cannot be undone.",
+    "manageTitle": "Manage Workspaces"
   },
   "track": {
     "createTitle": "New Track",

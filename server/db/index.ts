@@ -275,6 +275,14 @@ export function runMigrations(): void {
         created_at integer NOT NULL,
         updated_at integer NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS bookmarks (
+        id text PRIMARY KEY NOT NULL,
+        workspace_id text NOT NULL,
+        event_id text NOT NULL,
+        name text NOT NULL,
+        color text DEFAULT '#3b82f6',
+        created_at integer NOT NULL
+      );
       CREATE TABLE IF NOT EXISTS revisions (
         id text PRIMARY KEY NOT NULL,
         workspace_id text NOT NULL,
@@ -442,6 +450,8 @@ export function runMigrations(): void {
       CREATE INDEX IF NOT EXISTS assets_sha256_idx ON assets (sha256);
       CREATE INDEX IF NOT EXISTS assets_kind_idx ON assets (kind);
       CREATE INDEX IF NOT EXISTS maps_workspace_idx ON maps (workspace_id);
+      CREATE INDEX IF NOT EXISTS bookmarks_workspace_idx ON bookmarks (workspace_id);
+      CREATE INDEX IF NOT EXISTS bookmarks_event_idx ON bookmarks (event_id);
       CREATE INDEX IF NOT EXISTS scenes_workspace_idx ON scenes (workspace_id);
       CREATE INDEX IF NOT EXISTS scenes_order_idx ON scenes (scene_order);
       CREATE INDEX IF NOT EXISTS beats_scene_idx ON beats (scene_id);
@@ -609,6 +619,50 @@ function ensureSchemaCompatibility(): void {
   ensureColumn('ai_cache', 'response', 'text', "''");
   ensureColumn('ai_cache', 'model', 'text', "''");
   ensureColumn('ai_cache', 'hit_count', 'integer', '0');
+
+  // ── v1.2 新表补建 ──
+  // 当老库（< v1.2）通过 drizzle 迁移部分成功（workspaces 表存在）
+  // 但 bookmarks/maps 等新表未建时，在此幂等补建。
+  if (!tableExists('bookmarks')) {
+    try {
+      sqlite.exec(`
+        CREATE TABLE IF NOT EXISTS bookmarks (
+          id text PRIMARY KEY NOT NULL,
+          workspace_id text NOT NULL,
+          event_id text NOT NULL,
+          name text NOT NULL,
+          color text DEFAULT '#3b82f6',
+          created_at integer NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS bookmarks_workspace_idx ON bookmarks (workspace_id);
+        CREATE INDEX IF NOT EXISTS bookmarks_event_idx ON bookmarks (event_id);
+      `);
+      dbLog.info('[compat] created missing bookmarks table');
+    } catch (err) {
+      dbLog.warn({ err }, '[compat] failed to create bookmarks table (ignored)');
+    }
+  }
+  if (!tableExists('maps')) {
+    try {
+      sqlite.exec(`
+        CREATE TABLE IF NOT EXISTS maps (
+          id text PRIMARY KEY NOT NULL,
+          workspace_id text NOT NULL,
+          name text NOT NULL,
+          background_asset_id text,
+          width integer DEFAULT 1920 NOT NULL,
+          height integer DEFAULT 1080 NOT NULL,
+          markers_json text DEFAULT '[]',
+          created_at integer NOT NULL,
+          updated_at integer NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS maps_workspace_idx ON maps (workspace_id);
+      `);
+      dbLog.info('[compat] created missing maps table');
+    } catch (err) {
+      dbLog.warn({ err }, '[compat] failed to create maps table (ignored)');
+    }
+  }
 }
 
 export function closeDb(): void {

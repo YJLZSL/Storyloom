@@ -49,7 +49,9 @@
     "ai": "AI 助手",
     "connections": "关联",
     "consistency": "一致性",
-    "eventEditor": "事件编辑器"
+    "eventEditor": "事件编辑器",
+    "bookmarks": "书签",
+    "maps": "地图"
   },
   "workspace": {
     "createTitle": "新建工作区",
@@ -67,7 +69,8 @@
     "deleted": "已删除",
     "deleteFailed": "删除失败",
     "selectPlaceholder": "选择工作区",
-    "deleteConfirmShort": "确定要删除该工作区吗？此操作不可撤销。"
+    "deleteConfirmShort": "确定要删除该工作区吗？此操作不可撤销。",
+    "manageTitle": "管理工作区"
   },
   "track": {
     "createTitle": "新建轨道",

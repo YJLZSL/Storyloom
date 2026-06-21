@@ -27,7 +27,7 @@ import { EventDetailView } from '@/components/events/EventDetailView';
 import { tryHandleShortcut, getCurrentContext } from '@/lib/shortcut-registry';
 import { setApiBase } from '@/services/api';
 import { useWorkspace } from '@/services/api-hooks';
-import { PanelLeftIcon, LayersIcon } from '@/lib/icons';
+import { PanelLeftIcon, LayersIcon, BookmarkIcon, MapIcon } from '@/lib/icons';
 import { TButton } from '@/components/ui-tdesign';
 import { cn } from '@/lib/utils';
 import {
@@ -189,6 +189,9 @@ export function AppShell() {
                 <ContextMenuItem onClick={() => useUIStore.getState().toggleFocusMode()}>切换专注模式</ContextMenuItem>
                 <ContextMenuItem onClick={() => useUIStore.getState().toggleZenMode()}>切换 Zen 模式</ContextMenuItem>
                 <ContextMenuSeparator />
+                <ContextMenuItem icon={<BookmarkIcon size={14} />} onClick={() => useUIStore.getState().setActivePanel(useUIStore.getState().activePanel === 'bookmarks' ? null : 'bookmarks')}>书签</ContextMenuItem>
+                <ContextMenuItem icon={<MapIcon size={14} />} onClick={() => useUIStore.getState().setActivePanel(useUIStore.getState().activePanel === 'maps' ? null : 'maps')}>地图</ContextMenuItem>
+                <ContextMenuSeparator />
                 <ContextMenuItem onClick={() => document.execCommand('copy')}>复制</ContextMenuItem>
                 <ContextMenuItem onClick={() => document.execCommand('paste')}>粘贴</ContextMenuItem>
               </ContextMenuContent>
@@ -252,6 +255,9 @@ export function AppShell() {
               <ContextMenuItem onClick={() => ctx.save()}>保存</ContextMenuItem>
               <ContextMenuItem onClick={() => useUIStore.getState().toggleFocusMode()}>切换专注模式</ContextMenuItem>
               <ContextMenuItem onClick={() => useUIStore.getState().toggleZenMode()}>切换 Zen 模式</ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem icon={<BookmarkIcon size={14} />} onClick={() => useUIStore.getState().setActivePanel(useUIStore.getState().activePanel === 'bookmarks' ? null : 'bookmarks')}>书签</ContextMenuItem>
+              <ContextMenuItem icon={<MapIcon size={14} />} onClick={() => useUIStore.getState().setActivePanel(useUIStore.getState().activePanel === 'maps' ? null : 'maps')}>地图</ContextMenuItem>
               <ContextMenuSeparator />
               <ContextMenuItem onClick={() => document.execCommand('copy')}>复制</ContextMenuItem>
               <ContextMenuItem onClick={() => document.execCommand('paste')}>粘贴</ContextMenuItem>
