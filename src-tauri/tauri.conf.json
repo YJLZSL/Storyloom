@@ -26,6 +26,19 @@
       "csp": "default-src 'self'; connect-src 'self' http://localhost:* http://127.0.0.1:*; img-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline'"
     }
   },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/YJLZSL/Storyloom/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQ0NEE5RkNBRDU1OUMyNDUKUldSRndsblZ5cDlLMUJabEE4ZkEyUStGSWNhT0ZkNEVvRG1sZFQ1ejhlaWErSGZlSlQzQUFmQTUK",
+      "dialog": false,
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "bundle": {
     "active": true,
     "targets": ["nsis"],
