@@ -2,9 +2,18 @@
 
 > 本文档面向所有接替 Storyloom 开发的 AI Agent。遵守这些规则可以避免混乱、减少重复劳动、保护已有功能。
 >
-> **版本**：v1.4.0 基线
+> **版本**：v1.5.0 基线
 > **最后更新**：2026-06-21
 > **状态**：必须遵守
+
+---
+
+> **v1.5.0 新增**：
+> - 新增共享组件：`PageHeader`、`SearchBar`、`StatsBar`（所有页面应遵循「标题 → 搜索 → 统计 → 内容」统一布局）
+> - 新增功能模块：`NotebookView`（资料库）、`AIAssistantView`（AI助手）、`WritingView`（写作）
+> - 新增 API Hooks：资料库相关 hooks（`useNotes`、`useNoteFolders`、`useNoteTags` 等）
+> - 新增数据库表：`notes`、`note_folders`、`note_tags`（新增表时必须同时在 schema.ts 和迁移逻辑中注册）
+> - 全局布局：顶部水平导航（`TopToolbar`）替代双层工具栏，左侧边栏仅在时间轴视图显示
 
 ---
 
