@@ -1,7 +1,7 @@
 # Storyloom 项目文档索引
 
 > **仓库地址**：`https://github.com/YJLZSL/Storyloom`
-> **版本**：v1.2.1
+> **版本**：v1.2.2
 > **最后更新**：2026-06-21
 
 ---
@@ -13,7 +13,7 @@
 | **快速开始** | 新成员上手指南 | [`docs/QUICKSTART.md`](./QUICKSTART.md) |
 | **开发指南** | 本地开发环境搭建与调试 | [`docs/DEVELOPMENT.md`](./DEVELOPMENT.md) |
 | **发版指南** | 标准发版流程（10步） | [`docs/RELEASING.md`](./RELEASING.md) |
-| **更新日志** | v1.2.1 完整更新内容 | [`docs/CHANGELOG-v1.2.1.md`](./CHANGELOG-v1.2.1.md) |
+| **更新日志** | v1.2.2 完整更新内容 | [`docs/CHANGELOG-v1.2.2.md`](./CHANGELOG-v1.2.2.md) |
 | **后续规划** | v1.3.0+ 方向与路线图 | [`docs/ROADMAP-v1.3+.md`](./ROADMAP-v1.3+.md) |
 | **总更新日志** | 全版本历史记录 | [`CHANGELOG.md`](../CHANGELOG.md) |
 | **系统架构** | 技术栈与模块架构 | [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) |

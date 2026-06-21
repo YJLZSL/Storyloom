@@ -1,0 +1,43 @@
+# Storyloom v1.2.2 更新日志
+
+> 发布日期：2026-06-21
+
+---
+
+## 修复内容
+
+### P0 — 严重功能故障
+- **修复工作区删除失败**：根因是数据库初始化逻辑缺陷（`runMigrations()` 中 Step 3 只检查 `workspaces` 表存在就提前返回，导致新表未执行 DDL）
+- **修复创建轨道失败**：同上，数据库初始化缺陷导致 `tracks` 表缺失
+
+### 架构重构
+- **数据库层重构**：新建 `server/db/init.ts`，从 `schema.ts` 生成 `CREATE TABLE IF NOT EXISTS` 语句（21 张表 + 44 个索引），简化初始化逻辑
+- **新增健康检查端点**：`/api/health/db` 检查所有核心表是否存在
+- **工作区后端 CRUD 增强**：逐表独立删除（避免事务回滚）+ 详细日志 + 结构化错误响应
+- **工作区前端 Store 重写**：完整 CRUD（fetchWorkspaces/createWorkspace/updateWorkspace/deleteWorkspace）+ loading/error 状态 + 数据同步
+- **时间轴架构重构**：`TimelineCanvas` 拆分为 `TimelineToolbar`、`TimelineSkeleton`、`HiddenTracksPanel` 三个子组件
+- **视口内事件过滤**：`TimelineTrack` 只渲染视口内事件（`visibleEvents`），优化性能
+
+### P1 — UI/UX 优化
+- 修复字体全局适配：TDesign 组件统一继承项目字体
+- 右键菜单新增「书签」和「地图」入口
+
+---
+
+## 技术栈确认
+
+- **Electron** 42.4.0
+- **React** 19.2.0
+- **TypeScript** 5.8.3
+- **Vite** 6.4.3
+- **Tailwind CSS** v4.1.0
+- **TDesign React** 1.17.1
+- **better-sqlite3** 12.1.0
+- **Fastify** 5.3.0
+
+---
+
+## 构建产物
+
+- `Storyloom-Setup-1.2.2.exe`（约 125 MB）
+- 下载地址：https://github.com/YJLZSL/Storyloom/releases/download/v1.2.2/Storyloom-Setup-1.2.2.exe

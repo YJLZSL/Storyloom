@@ -5,6 +5,22 @@
 > v3.0.1 起 GitHub Releases 列表只保留当前最新版（旧版本仍可通过 git tag 回溯，不再以 Release 形式陈列）。
 > **v1.0.0 是全面重构后的正式版本，代表 Storyloom 进入稳定阶段。**
 
+## [1.2.2] — 2026-06-21
+
+### 修复
+- **工作区删除失败**：根因是数据库初始化逻辑缺陷（`runMigrations()` 中 Step 3 只检查 `workspaces` 表存在就提前返回，导致新表未执行 DDL）
+- **创建轨道失败**：同上，数据库初始化缺陷导致 `tracks` 表缺失
+
+### 架构重构
+- **数据库层重构**：新建 `server/db/init.ts`，从 `schema.ts` 生成 `CREATE TABLE IF NOT EXISTS` 语句（21 张表 + 44 个索引），简化初始化逻辑
+- **新增健康检查端点**：`/api/health/db` 检查所有核心表是否存在
+- **工作区后端 CRUD 增强**：逐表独立删除（避免事务回滚）+ 详细日志 + 结构化错误响应
+- **工作区前端 Store 重写**：完整 CRUD + loading/error 状态 + 数据同步
+- **时间轴架构重构**：`TimelineCanvas` 拆分为 `TimelineToolbar`、`TimelineSkeleton`、`HiddenTracksPanel` 三个子组件
+- **视口内事件过滤**：只渲染视口内事件，优化性能
+
+---
+
 ## [1.2.1] — 2026-06-21
 
 ### 修复
