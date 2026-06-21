@@ -1,6 +1,6 @@
 [package]
 name = "storyloom"
-version = "1.0.0"
+version = "1.1.0"
 description = "Storyloom · 织叙 — 用一根时间线，把故事织成宇宙"
 authors = ["Storyloom Team"]
 license = "MIT"
