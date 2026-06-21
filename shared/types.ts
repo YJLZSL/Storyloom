@@ -145,7 +145,7 @@ export interface CreateOutlineVersionRequest {
   description?: string;
 }
 
-// --- 视觉小说数据模型类型 (v1.2) ---
+// --- 视觉小说数据模型类型 ---
 
 /** 节拍类型 */
 export type BeatKind = 'line' | 'choice' | 'jump' | 'sfx' | 'anim';
@@ -691,7 +691,7 @@ export interface UpdateBookmarkRequest {
 }
 
 // ============================================
-// 资料库（笔记本）类型 (v1.5)
+// 资料库（笔记本）类型
 // ============================================
 
 /** 笔记 */
@@ -767,7 +767,7 @@ export interface ExportData {
   foreshadowings: Record<string, unknown>[];
   worldSettings: Record<string, unknown>[];
   outlineVersions?: Record<string, unknown>[];
-  // 视觉小说数据 (v1.2)
+  // 视觉小说数据
   scenes?: Record<string, unknown>[];
   beats?: Record<string, unknown>[];
   choices?: Record<string, unknown>[];

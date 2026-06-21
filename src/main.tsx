@@ -9,6 +9,7 @@ import App from './App.js';
 import 'tdesign-react/es/style/index.css';
 import './index.css';
 import { TDesignThemeAdapter, getTDesignGlobalConfig } from './components/ui-tdesign/theme-adapter.js';
+import { AppErrorBoundary } from './components/system/ErrorBoundary.js';
 
 // 主题引导脚本：避免首屏闪烁
 const savedTheme = localStorage.getItem('theme');
@@ -24,7 +25,9 @@ root.render(
     <ConfigProvider globalConfig={getTDesignGlobalConfig()}>
       <TDesignThemeAdapter>
         <QueryClientProvider client={queryClient}>
-          <App />
+          <AppErrorBoundary>
+            <App />
+          </AppErrorBoundary>
         </QueryClientProvider>
       </TDesignThemeAdapter>
     </ConfigProvider>

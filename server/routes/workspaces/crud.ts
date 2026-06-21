@@ -16,6 +16,9 @@ import {
   maps,
   assets,
   bookmarks,
+  notes,
+  noteFolders,
+  noteTags,
 } from '../../db/schema.js';
 import { idParam, createWorkspaceBody, updateWorkspaceBody } from '../../lib/validation.js';
 import type { CreateWorkspaceRequest, UpdateWorkspaceRequest } from '../../../shared/types.js';
@@ -208,6 +211,9 @@ export const crudRoutes: FastifyPluginAsync = async (app) => {
           { name: 'maps', table: maps },
           { name: 'assets', table: assets },
           { name: 'bookmarks', table: bookmarks },
+          { name: 'notes', table: notes },
+          { name: 'noteFolders', table: noteFolders },
+          { name: 'noteTags', table: noteTags },
         ];
 
         for (const { name, table } of tables) {
@@ -222,7 +228,7 @@ export const crudRoutes: FastifyPluginAsync = async (app) => {
         }
 
         // 清理没有 Drizzle schema 定义的表（仅硬编码 DDL）
-        const rawTables = ['revisions', 'ai_conversations', 'ai_cache', 'event_characters', 'event_world_settings', 'event_assets', 'character_assets', 'scene_assets', 'beats', 'choices'];
+        const rawTables = ['revisions', 'ai_conversations', 'ai_cache', 'event_characters', 'event_world_settings', 'event_assets', 'character_assets', 'scene_assets'];
         for (const rawTable of rawTables) {
           try {
             app.sqlite.prepare(`DELETE FROM ${rawTable} WHERE workspace_id = ?`).run(id);

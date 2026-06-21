@@ -14,7 +14,9 @@ export async function healthRoutes(app: FastifyInstance) {
       'foreshadowings', 'world_settings', 'bookmarks', 'maps',
       'event_characters', 'event_world_settings', 'revisions',
       'ai_conversations', 'ai_cache', 'scenes', 'beats', 'choices',
-      'assets', 'flags', 'auto_saves', 'outline_versions'
+      'assets', 'flags', 'auto_saves', 'outline_versions',
+      'notes', 'note_folders', 'note_tags',
+      'character_assets', 'event_assets', 'scene_assets',
     ];
 
     const results: Record<string, boolean> = {};

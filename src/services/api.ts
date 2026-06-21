@@ -1,21 +1,14 @@
-import { isTauri, getServerPort } from '@/lib/tauri-api';
+import { isTauri } from '@/lib/tauri-api';
 
 const envApiBase = (import.meta as unknown as { env: Record<string, string> }).env.VITE_API_BASE;
 let API_BASE = envApiBase || '';
 
-// Tauri 环境下动态获取服务器端口
-if (isTauri() && !API_BASE) {
-  getServerPort()
-    .then((port) => {
-      API_BASE = `http://localhost:${port}`;
-    })
-    .catch(() => {
-      API_BASE = 'http://localhost:3001';
-    });
-}
-
 export function setApiBase(port: number): void {
   API_BASE = `http://localhost:${port}`;
+}
+
+export function getApiBase(): string {
+  return API_BASE;
 }
 
 export class APIError extends Error {
@@ -34,15 +27,14 @@ async function request<T>(
   path: string,
   body?: unknown
 ): Promise<T> {
+  if (!API_BASE && isTauri()) {
+    throw new APIError('API_NOT_READY', '后端服务尚未就绪，请稍候…');
+  }
   const url = `${API_BASE}${path}`;
-  const options: RequestInit = {
-    method,
-  };
+  const options: RequestInit = { method };
 
   if (body !== undefined) {
-    options.headers = {
-      'Content-Type': 'application/json',
-    };
+    options.headers = { 'Content-Type': 'application/json' };
     options.body = JSON.stringify(body);
   }
 

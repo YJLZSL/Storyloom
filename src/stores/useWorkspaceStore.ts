@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { api } from '@/services/api';
 import { useTimelineStore } from './useTimelineStore';
 import { useTrackStore } from './useTrackStore';
 import { useSelectionStore } from './useSelectionStore';
@@ -50,11 +51,8 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       fetchWorkspaces: async () => {
         set({ loading: true, error: null });
         try {
-          const res = await fetch('/api/workspaces');
-          if (!res.ok) throw new Error('获取工作区失败');
-          const data = await res.json();
-          if (!data.success) throw new Error(data.error?.message || '获取工作区失败');
-          set({ workspaces: data.data || [], loading: false });
+          const data = await api.get<Workspace[]>('/api/workspaces');
+          set({ workspaces: data || [], loading: false });
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           set({ error: message || '获取工作区失败', loading: false });
@@ -64,16 +62,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       createWorkspace: async (name, description = '') => {
         set({ loading: true, error: null });
         try {
-          const res = await fetch('/api/workspaces', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, description }),
-          });
-          const data = await res.json();
-          if (!res.ok || !data.success) throw new Error(data.error?.message || '创建工作区失败');
+          const data = await api.post<Workspace>('/api/workspaces', { name, description });
           await get().fetchWorkspaces();
           set({ loading: false });
-          return data.data;
+          return data;
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           set({ error: message || '创建工作区失败', loading: false });
@@ -84,16 +76,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       updateWorkspace: async (id, updates) => {
         set({ loading: true, error: null });
         try {
-          const res = await fetch(`/api/workspaces/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updates),
-          });
-          const data = await res.json();
-          if (!res.ok || !data.success) throw new Error(data.error?.message || '更新工作区失败');
+          const data = await api.patch<Workspace>(`/api/workspaces/${id}`, updates);
           await get().fetchWorkspaces();
           set({ loading: false });
-          return data.data;
+          return data;
         } catch (err: unknown) {
           const message = err instanceof Error ? err.message : String(err);
           set({ error: message || '更新工作区失败', loading: false });
@@ -104,9 +90,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       deleteWorkspace: async (id) => {
         set({ loading: true, error: null });
         try {
-          const res = await fetch(`/api/workspaces/${id}`, { method: 'DELETE' });
-          const data = await res.json();
-          if (!res.ok || !data.success) throw new Error(data.error?.message || '删除工作区失败');
+          await api.delete(`/api/workspaces/${id}`);
           const currentId = get().currentWorkspaceId;
           if (currentId === id) {
             get().setCurrentWorkspace(null);

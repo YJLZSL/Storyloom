@@ -23,7 +23,7 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'production';
 process.env.STORYLOOM_SIDECAR = '1';
 
 const DEFAULT_PORT = 3001;
-const MAX_PORT = 3010;
+const MAX_PORT = 3050;
 const PORT_HOST = '127.0.0.1';
 
 // ── 2. 日志重定向到 DATA_DIR/app.log ──

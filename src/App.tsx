@@ -40,8 +40,12 @@ function App() {
           setApiBase(port);
           setBooting(false);
         });
-        // 5 秒后超时，取消遮罩
-        const timer = setTimeout(() => setBooting(false), 5000);
+        // 15 秒后超时，最后一次重试获取端口
+        const timer = setTimeout(() => {
+          getServerPort()
+            .then((port) => { setApiBase(port); setBooting(false); })
+            .catch(() => setBooting(false));
+        }, 15000);
         return () => {
           off();
           clearTimeout(timer);
@@ -57,14 +61,18 @@ function App() {
       {/* 渲染层：统一入口，根据主题配置自动选择渲染方式（默认 Canvas 2D 粒子） */}
       <RenderLayer />
 
-      <WorkspaceInitializer />
+      {!booting && (
+        <>
+          <WorkspaceInitializer />
 
-      {/* 页面过渡包装：为 AppShell 提供统一的进入 / 退出动画 */}
-      <PageTransition viewId="app-shell" preset="fade-slide">
-        <AppShell />
-      </PageTransition>
+          {/* 页面过渡包装：为 AppShell 提供统一的进入 / 退出动画 */}
+          <PageTransition viewId="app-shell" preset="fade-slide">
+            <AppShell />
+          </PageTransition>
 
-      <UpdateNotifier />
+          <UpdateNotifier />
+        </>
+      )}
     </>
   );
 }
