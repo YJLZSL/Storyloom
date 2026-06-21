@@ -33,13 +33,11 @@ import { useViewStore, type ViewId } from '@/stores/useViewStore';
 import {
   useWorkspaces,
   useWorkspace,
-  useCreateWorkspace,
-  useDeleteWorkspace,
 } from '@/services/api-hooks';
 import { useCommandContext } from '@/components/command-palette/commands';
 import { ThemeSelector } from '@/components/settings/ThemeSelector';
 import { LanguageSelector } from '@/components/layout/LanguageSelector';
-import { WorkspaceManagerDialog } from '@/components/workspace/WorkspaceManagerDialog';
+import { CreateWorkspaceDialog } from '@/components/workspace/CreateWorkspaceDialog';
 import { toast } from 'sonner';
 
 type IconComponent = (props: IconParkIconProps) => React.ReactElement;
@@ -73,49 +71,50 @@ export function TopToolbar() {
   const activeView = useViewStore((s) => s.activeView);
   const setActiveView = useViewStore((s) => s.setActiveView);
 
-  const [workspaceManagerOpen, setWorkspaceManagerOpen] = useState(false);
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
 
   const { data: workspaces } = useWorkspaces();
   const { data: currentWorkspace } = useWorkspace(currentWorkspaceId);
-  const createWorkspaceMutation = useCreateWorkspace();
-  const deleteWorkspaceMutation = useDeleteWorkspace();
   const ctx = useCommandContext();
 
-  // Dropdown 只保留工作区切换
-  const workspaceOptions: DropdownOption[] = (workspaces || []).map((ws) => ({
-    content: ws.name,
-    value: ws.id,
-    active: ws.id === currentWorkspaceId,
-    prefixIcon: <FolderOpenIcon />,
-  }));
+  // 统一工作区菜单：工作区列表 + 操作项
+  const workspaceMenuOptions: DropdownOption[] = [
+    ...(workspaces || []).map((ws) => ({
+      content: ws.name,
+      value: ws.id,
+      active: ws.id === currentWorkspaceId,
+      prefixIcon: <FolderOpenIcon className={ws.id === currentWorkspaceId ? 'text-primary' : ''} />,
+    })),
+    // 分隔线
+    { content: '-', value: 'divider', disabled: true },
+    // 操作项
+    {
+      content: t('workspace.createNewWorkspace') || '新建工作区',
+      value: 'action:new',
+      prefixIcon: <PlusIcon />,
+    },
+    {
+      content: t('workspace.manageWorkspace') || '管理工作区',
+      value: 'action:manage',
+      prefixIcon: <SettingConfigIcon />,
+    },
+  ];
 
-  const handleSwitchWorkspace = (id: string) => {
-    setCurrentWorkspace(id);
-  };
-
-  const handleCreateWorkspace = () => {
-    createWorkspaceMutation.mutate(
-      { name: t('workspace.defaultName', { date: new Date().toLocaleDateString() }) },
-      {
-        onSuccess: (workspace) => {
-          setCurrentWorkspace(workspace.id);
-          toast.success(t('workspace.created'));
-        },
-        onError: () => toast.error(t('workspace.createFailed')),
-      },
-    );
-  };
-
-  const handleDeleteWorkspace = (id: string) => {
-    deleteWorkspaceMutation.mutate(id, {
-      onSuccess: () => {
-        if (id === currentWorkspaceId) setCurrentWorkspace(null);
-        toast.success(t('workspace.deleted'));
-      },
-      onError: (err) => {
-        toast.error(`${t('workspace.deleteFailed')}: ${err.message}`);
-      },
-    });
+  const handleWorkspaceMenuClick = (option: DropdownOption) => {
+    const value = option.value as string;
+    if (value === 'divider') return;
+    if (value.startsWith('action:')) {
+      const action = value.replace('action:', '');
+      if (action === 'new') {
+        setCreateWorkspaceOpen(true);
+      } else if (action === 'manage') {
+        // 回到工作区选择器（EmptyShell）
+        useWorkspaceStore.getState().setCurrentWorkspace(null);
+      }
+      return;
+    }
+    // 切换工作区
+    setCurrentWorkspace(value);
   };
 
   return (
@@ -134,18 +133,13 @@ export function TopToolbar() {
 
         <div className="h-5 w-px bg-border/60" />
 
-        {/* 工作区切换 Dropdown */}
+        {/* 统一工作区菜单 Dropdown */}
         <Dropdown
-          options={workspaceOptions}
+          options={workspaceMenuOptions}
           trigger="click"
           placement="bottom-left"
-          minColumnWidth={180}
-          onClick={(option) => {
-            const value = option.value;
-            if (typeof value === 'string') {
-              handleSwitchWorkspace(value);
-            }
-          }}
+          minColumnWidth={200}
+          onClick={handleWorkspaceMenuClick}
         >
           <TButton variant="text" size="small" className="gap-1.5 font-medium rounded-md hover:bg-muted/80">
             <FolderOpenIcon className="size-4 text-muted-foreground" />
@@ -155,16 +149,6 @@ export function TopToolbar() {
             <DownIcon className="size-3 opacity-60 transition-transform duration-200" />
           </TButton>
         </Dropdown>
-
-        {/* 工作区管理按钮 */}
-        <TTooltip content={t('workspace.manageTitle') || '管理工作区'} placement="bottom">
-          <button
-            className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground active:scale-90"
-            onClick={() => setWorkspaceManagerOpen(true)}
-          >
-            <SettingConfigIcon size={16} />
-          </button>
-        </TTooltip>
       </div>
 
       {/* 中间：视图 Tab */}
@@ -326,22 +310,14 @@ export function TopToolbar() {
         </div>
       </div>
 
-      {/* 工作区管理对话框 */}
-      <WorkspaceManagerDialog
-        open={workspaceManagerOpen}
-        onClose={() => setWorkspaceManagerOpen(false)}
-        workspaces={workspaces || []}
-        currentWorkspaceId={currentWorkspaceId}
-        onSwitch={(id) => {
+      {/* 新建工作区对话框 */}
+      <CreateWorkspaceDialog
+        open={createWorkspaceOpen}
+        onClose={() => setCreateWorkspaceOpen(false)}
+        onCreated={(id: string) => {
           setCurrentWorkspace(id);
-          setWorkspaceManagerOpen(false);
+          toast.success(t('workspace.created'));
         }}
-        onDelete={handleDeleteWorkspace}
-        onCreate={() => {
-          handleCreateWorkspace();
-          setWorkspaceManagerOpen(false);
-        }}
-        isDeleting={deleteWorkspaceMutation.isPending}
       />
     </header>
   );

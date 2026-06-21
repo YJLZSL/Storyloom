@@ -70,7 +70,11 @@
     "deleteFailed": "Failed to delete",
     "selectPlaceholder": "Select workspace",
     "deleteConfirmShort": "Delete this workspace? This cannot be undone.",
-    "manageTitle": "Manage Workspaces"
+    "manageTitle": "Manage Workspaces",
+    "manageWorkspace": "Manage Workspaces",
+    "rename": "Rename",
+    "renamed": "Renamed",
+    "renameFailed": "Failed to rename"
   },
   "track": {
     "createTitle": "New Track",

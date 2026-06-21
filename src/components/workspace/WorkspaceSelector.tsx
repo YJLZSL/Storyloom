@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PlusIcon, FolderOpenIcon, DownloadIcon, UploadIcon } from '@/lib/icons';
 import { motion } from 'framer-motion';
-import { useWorkspaces, useDeleteWorkspace } from '@/services/api-hooks.js';
+import { useWorkspaces, useDeleteWorkspace, useUpdateWorkspace } from '@/services/api-hooks.js';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore.js';
 import { TButton } from '@/components/ui-tdesign';
 import { WorkspaceCard } from './WorkspaceCard.js';
@@ -10,6 +10,7 @@ import { CreateWorkspaceDialog } from './CreateWorkspaceDialog.js';
 import { ExportDialog } from './ExportDialog.js';
 import { ImportDialog } from './ImportDialog.js';
 import { WorkspaceCardSkeleton } from '@/components/_shared/Skeleton.js';
+import { toast } from 'sonner';
 import type { Workspace } from '../../../shared/types.js';
 
 const containerVariant = {
@@ -33,6 +34,7 @@ const headerVariant = {
 export function WorkspaceSelector() {
   const { data: workspaces, isLoading } = useWorkspaces();
   const deleteWorkspace = useDeleteWorkspace();
+  const updateWorkspace = useUpdateWorkspace();
   const setCurrentWorkspace = useWorkspaceStore((s) => s.setCurrentWorkspace);
   const [createOpen, setCreateOpen] = useState(false);
   const [exportWs, setExportWs] = useState<Workspace | null>(null);
@@ -43,9 +45,36 @@ export function WorkspaceSelector() {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('确定要删除这个工作区吗？所有数据将被永久删除。')) {
-      deleteWorkspace.mutate(id);
+    // 先检查工作区是否存在于列表中，避免删除已不存在的工作区
+    const ws = workspaces?.find((w) => w.id === id);
+    if (!ws) {
+      toast.error('工作区不存在或已被删除');
+      return;
     }
+    if (confirm('确定要删除这个工作区吗？所有数据将被永久删除。')) {
+      deleteWorkspace.mutate(id, {
+        onSuccess: () => {
+          toast.success('工作区已删除');
+        },
+        onError: (err: any) => {
+          toast.error(`删除失败: ${err.message}`);
+        },
+      });
+    }
+  };
+
+  const handleRename = (id: string, newName: string) => {
+    updateWorkspace.mutate(
+      { id, data: { name: newName } },
+      {
+        onSuccess: () => {
+          toast.success('工作区已重命名');
+        },
+        onError: (err: any) => {
+          toast.error(`重命名失败: ${err.message}`);
+        },
+      }
+    );
   };
 
   return (
@@ -117,6 +146,7 @@ export function WorkspaceSelector() {
                   workspace={ws}
                   onSelect={() => handleSelect(ws.id)}
                   onDelete={() => handleDelete(ws.id)}
+                  onRename={(newName) => handleRename(ws.id, newName)}
                 />
                 <div className="flex gap-2">
                   <TButton

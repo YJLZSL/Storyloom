@@ -53,11 +53,18 @@ export function CreateWorkspaceDialog({ open, onClose, onCreated }: CreateWorksp
     }
   }, [open]);
 
+  const getDefaultName = () => {
+    return `新工作区 ${new Date().toLocaleDateString()}`;
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!name.trim() || createWorkspace.isPending || applying) return;
+    if (createWorkspace.isPending || applying) return;
+    
+    const finalName = name.trim() || getDefaultName();
+    
     try {
-      const result = await createWorkspace.mutateAsync({ name, description });
+      const result = await createWorkspace.mutateAsync({ name: finalName, description });
       if (templateId !== 'blank') {
         setApplying(true);
         try {
@@ -95,7 +102,7 @@ export function CreateWorkspaceDialog({ open, onClose, onCreated }: CreateWorksp
       width={640}
       confirmBtn={{
         content: '创建',
-        disabled: !name.trim() || createWorkspace.isPending || applying,
+        disabled: createWorkspace.isPending || applying,
         loading: createWorkspace.isPending || applying,
       }}
       cancelBtn="取消"

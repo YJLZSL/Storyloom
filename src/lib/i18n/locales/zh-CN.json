@@ -70,7 +70,11 @@
     "deleteFailed": "删除失败",
     "selectPlaceholder": "选择工作区",
     "deleteConfirmShort": "确定要删除该工作区吗？此操作不可撤销。",
-    "manageTitle": "管理工作区"
+    "manageTitle": "管理工作区",
+    "manageWorkspace": "管理工作区",
+    "rename": "重命名",
+    "renamed": "已重命名",
+    "renameFailed": "重命名失败"
   },
   "track": {
     "createTitle": "新建轨道",

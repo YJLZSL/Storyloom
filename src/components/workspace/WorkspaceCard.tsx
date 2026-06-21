@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { HistoryIcon, DeleteIcon, FileTextIcon } from '@/lib/icons';
+import { HistoryIcon, DeleteIcon, FileTextIcon, EditIcon } from '@/lib/icons';
 import { useEvents } from '@/services/api-hooks.js';
 import { TButton, TTag } from '@/components/ui-tdesign';
 import { safeWorkspaceName, safeDescription } from '@/lib/safe-text';
@@ -9,6 +10,7 @@ interface WorkspaceCardProps {
   workspace: Workspace;
   onSelect: () => void;
   onDelete: () => void;
+  onRename?: (newName: string) => void;
 }
 
 function formatRelativeTime(date: Date | string): string {
@@ -28,9 +30,30 @@ function formatRelativeTime(date: Date | string): string {
   return '刚刚';
 }
 
-export function WorkspaceCard({ workspace, onSelect, onDelete }: WorkspaceCardProps) {
+export function WorkspaceCard({ workspace, onSelect, onDelete, onRename }: WorkspaceCardProps) {
   const { data: eventsData } = useEvents(workspace.id);
   const eventCount = eventsData?.total ?? 0;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(workspace.name);
+
+  const handleRenameSubmit = () => {
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== workspace.name && onRename) {
+      onRename(trimmed);
+    }
+    setIsEditing(false);
+    setEditName(workspace.name);
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleRenameSubmit();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditName(workspace.name);
+    }
+  };
 
   return (
     <motion.div
@@ -46,18 +69,44 @@ export function WorkspaceCard({ workspace, onSelect, onDelete }: WorkspaceCardPr
       />
 
       <div className="mb-3 flex items-start justify-between gap-3 pl-2">
-        <h3 className="line-clamp-1 font-serif text-lg font-semibold text-foreground">
-          {safeWorkspaceName(workspace.name)}
-        </h3>
-        <TButton
-          variant="text"
-          size="small"
-          onClick={(e) => { e.stopPropagation(); onDelete(); }}
-          className="shrink-0 rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
-          aria-label="删除工作区"
-        >
-          <DeleteIcon size={16} />
-        </TButton>
+        {isEditing ? (
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={handleRenameKeyDown}
+            onBlur={handleRenameSubmit}
+            autoFocus
+            className="flex-1 min-w-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-sm font-serif font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <h3 className="line-clamp-1 font-serif text-lg font-semibold text-foreground flex-1 min-w-0">
+            {safeWorkspaceName(workspace.name)}
+          </h3>
+        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {onRename && !isEditing && (
+            <TButton
+              variant="text"
+              size="small"
+              onClick={(e) => { e.stopPropagation(); setIsEditing(true); setEditName(workspace.name); }}
+              className="rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-primary/10 hover:text-primary focus:opacity-100 group-hover:opacity-100"
+              aria-label="重命名工作区"
+            >
+              <EditIcon size={16} />
+            </TButton>
+          )}
+          <TButton
+            variant="text"
+            size="small"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="rounded-md p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive focus:opacity-100 group-hover:opacity-100"
+            aria-label="删除工作区"
+          >
+            <DeleteIcon size={16} />
+          </TButton>
+        </div>
       </div>
 
       <p className="mb-4 min-h-[2.5rem] line-clamp-2 text-sm text-muted-foreground pl-2">

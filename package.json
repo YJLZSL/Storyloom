@@ -1,6 +1,6 @@
 {
   "name": "storyloom",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Storyloom · 絮织 — Weave timelines into living stories. Desktop authoring workbench for visual novels and narrative-driven stories.",
   "type": "module",
   "main": "electron-out/electron/main.js",

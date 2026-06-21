@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog } from 'tdesign-react';
 import { cn } from '@/lib/utils';
-import { FolderOpenIcon, DeleteIcon, PlusIcon } from '@/lib/icons';
+import { FolderOpenIcon, DeleteIcon, PlusIcon, EditIcon } from '@/lib/icons';
 import { useTranslation } from 'react-i18next';
 import type { Workspace } from '../../../shared/types';
 
@@ -12,6 +12,7 @@ interface WorkspaceManagerDialogProps {
   currentWorkspaceId: string | null;
   onSwitch: (id: string) => void;
   onDelete: (id: string) => void;
+  onRename?: (id: string, newName: string) => void;
   onCreate: () => void;
   isDeleting: boolean;
 }
@@ -23,11 +24,14 @@ export function WorkspaceManagerDialog({
   currentWorkspaceId,
   onSwitch,
   onDelete,
+  onRename,
   onCreate,
   isDeleting,
 }: WorkspaceManagerDialogProps) {
   const { t } = useTranslation();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
 
   const handleDelete = (id: string) => {
     if (confirmDeleteId === id) {
@@ -36,6 +40,30 @@ export function WorkspaceManagerDialog({
     } else {
       setConfirmDeleteId(id);
       setTimeout(() => setConfirmDeleteId(null), 3000);
+    }
+  };
+
+  const startRename = (id: string, name: string) => {
+    setEditingId(id);
+    setEditName(name);
+  };
+
+  const submitRename = (id: string) => {
+    const trimmed = editName.trim();
+    if (trimmed && onRename) {
+      onRename(id, trimmed);
+    }
+    setEditingId(null);
+    setEditName('');
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent, id: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitRename(id);
+    } else if (e.key === 'Escape') {
+      setEditingId(null);
+      setEditName('');
     }
   };
 
@@ -54,6 +82,7 @@ export function WorkspaceManagerDialog({
           {workspaces.map((ws) => {
             const isCurrent = ws.id === currentWorkspaceId;
             const isConfirming = confirmDeleteId === ws.id;
+            const isEditing = editingId === ws.id;
             return (
               <div
                 key={ws.id}
@@ -69,14 +98,28 @@ export function WorkspaceManagerDialog({
                   className={cn('shrink-0', isCurrent ? 'text-primary' : 'text-muted-foreground')}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{ws.name}</div>
-                  <div className="text-[10px] text-muted-foreground/60">
-                    {isCurrent ? '当前工作区' : ws.description || '无描述'}
-                  </div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      onKeyDown={(e) => handleRenameKeyDown(e, ws.id)}
+                      onBlur={() => submitRename(ws.id)}
+                      autoFocus
+                      className="w-full rounded-md border border-primary/30 bg-background px-2 py-1 text-sm font-medium focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  ) : (
+                    <>
+                      <div className="text-sm font-medium truncate">{ws.name}</div>
+                      <div className="text-[10px] text-muted-foreground/60">
+                        {isCurrent ? '当前工作区' : ws.description || '无描述'}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1 shrink-0">
-                  {!isCurrent && (
+                  {!isCurrent && !isEditing && (
                     <button
                       className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                       onClick={() => {
@@ -86,6 +129,15 @@ export function WorkspaceManagerDialog({
                     >
                       <FolderOpenIcon size={12} />
                       切换
+                    </button>
+                  )}
+                  {onRename && !isEditing && (
+                    <button
+                      className="flex items-center gap-1 px-2 py-1 text-xs rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                      onClick={() => startRename(ws.id, ws.name)}
+                    >
+                      <EditIcon size={12} />
+                      重命名
                     </button>
                   )}
                   {workspaces.length > 1 && (
