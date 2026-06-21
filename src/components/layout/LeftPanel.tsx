@@ -15,6 +15,7 @@ import {
   MenuFoldIcon,
   BookmarkIcon,
   MapIcon,
+  FilmIcon,
   type IconParkIconProps,
 } from '@/lib/icons';
 import { TButton, TInput } from '@/components/ui-tdesign';
@@ -35,7 +36,7 @@ interface ToolItem {
   id: string;
   label: string;
   icon: IconComponent;
-  panelId: 'characters' | 'worldview' | 'foreshadowing' | 'ai' | 'connections' | 'consistency' | 'event-editor' | 'bookmarks' | 'maps';
+  panelId: 'characters' | 'worldview' | 'foreshadowing' | 'ai' | 'connections' | 'consistency' | 'event-editor' | 'bookmarks' | 'maps' | 'script-editor';
 }
 
 /* ───────── 常量 ───────── */
@@ -53,6 +54,7 @@ const UTILITY_TOOLS: ToolItem[] = [
   { id: 'event-editor', label: 'Event Editor', icon: EditIcon, panelId: 'event-editor' },
   { id: 'bookmarks', label: 'Bookmarks', icon: BookmarkIcon, panelId: 'bookmarks' },
   { id: 'maps', label: 'Maps', icon: MapIcon, panelId: 'maps' },
+  { id: 'script-editor', label: '剧本编辑器', icon: FilmIcon, panelId: 'script-editor' },
 ];
 
 export function LeftPanel() {
@@ -244,6 +246,7 @@ function ToolSection({
       'event-editor': 'panels.eventEditor',
       bookmarks: '书签',
       maps: '地图',
+      'script-editor': '剧本编辑器',
     };
     return t(keyMap[id] || id);
   };

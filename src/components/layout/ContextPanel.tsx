@@ -18,6 +18,7 @@ import { ConsistencyPanel } from '@/components/consistency/ConsistencyPanel';
 import { EventContextPanel } from './EventContextPanel';
 import { BookmarkPanel } from '@/components/bookmark/BookmarkPanel';
 import { MapView } from '@/components/maps/MapView';
+import { ScriptEditorView } from '@/components/script-editor/ScriptEditorView';
 import type { TimelineEvent } from '../../../shared/types';
 
 const PANEL_TITLES: Record<string, string> = {
@@ -32,6 +33,7 @@ const PANEL_TITLES: Record<string, string> = {
   shortcuts: 'contextPanel.shortcuts',
   bookmarks: '书签',
   maps: '地图',
+  'script-editor': '剧本编辑器',
 };
 
 export function ContextPanel() {
@@ -285,6 +287,9 @@ function getPanelContent(
 
     case 'maps':
       return { title: PANEL_TITLES.maps, content: <MapView /> };
+
+    case 'script-editor':
+      return { title: PANEL_TITLES['script-editor'], content: <ScriptEditorView /> };
 
     default:
       return { title: t('contextPanel.contextPanel'), content: <EmptyState /> };

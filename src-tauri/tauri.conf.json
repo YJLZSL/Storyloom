@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Storyloom",
-  "version": "1.5.0",
+  "version": "1.0.0",
   "identifier": "com.storyloom.app",
   "build": {
     "frontendDist": "../dist",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Storyloom",
+        "title": "Storyloom · 织叙",
         "width": 1400,
         "height": 900,
         "minWidth": 800,
@@ -30,9 +30,10 @@
     "updater": {
       "active": true,
       "endpoints": [
+        "https://github.com/YJLZSL/Storyloom/releases/download/v1.0.0/latest.json",
         "https://github.com/YJLZSL/Storyloom/releases/latest/download/latest.json"
       ],
-      "pubkey": "RWR6wkYowoZ2UgfDJjSR6I1tQL1T8KWZqaoIhSc41JbeKBGJ+WoZMo08",
+      "pubkey": "RWQuaGLiDZ+ZSGmGmNOMQnCKPNt1RBKkadpXaqe0l6x4U9AsWRVYphCQ",
       "dialog": false,
       "windows": {
         "installMode": "passive"
@@ -47,11 +48,27 @@
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
-      "icons/icon.ico"
+      "icons/icon.ico",
+      "icons/icon.png",
+      "icons/Square30x30Logo.png",
+      "icons/Square44x44Logo.png",
+      "icons/Square71x71Logo.png",
+      "icons/Square89x89Logo.png",
+      "icons/Square107x107Logo.png",
+      "icons/Square142x142Logo.png",
+      "icons/Square150x150Logo.png",
+      "icons/Square284x284Logo.png",
+      "icons/Square310x310Logo.png",
+      "icons/StoreLogo.png"
     ],
     "windows": {
       "nsis": {
-        "installMode": "both"
+        "installMode": "both",
+        "languages": ["SimpChinese"],
+        "installerIcon": "icons/icon.ico",
+        "sidebarImage": "icons/128x128.png",
+        "headerImage": "icons/128x128.png",
+        "startMenuFolder": "Storyloom"
       }
     },
     "externalBin": [

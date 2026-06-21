@@ -59,7 +59,8 @@ export function UpdateNotifier() {
         break;
 
       case 'error':
-        // 静默处理更新错误
+        // 静默处理更新错误，但输出日志便于调试
+        console.error('[Storyloom Update] Error:', evt.message);
         break;
 
       case 'available': {

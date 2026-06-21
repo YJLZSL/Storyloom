@@ -1,10 +1,10 @@
 [package]
 name = "storyloom"
-version = "1.5.0"
-description = "Storyloom · 絮织 — Weave timelines into living stories"
+version = "1.0.0"
+description = "Storyloom · 织叙 — 用一根时间线，把故事织成宇宙"
 authors = ["Storyloom Team"]
-license = ""
-repository = ""
+license = "MIT"
+repository = "https://github.com/YJLZSL/Storyloom"
 edition = "2021"
 rust-version = "1.77.2"
 

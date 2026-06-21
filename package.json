@@ -1,7 +1,7 @@
 {
   "name": "storyloom",
-  "version": "1.5.0",
-  "description": "Storyloom · 絮织 — Weave timelines into living stories. Desktop authoring workbench for visual novels and narrative-driven stories.",
+  "version": "1.0.0",
+  "description": "Storyloom · 织叙 — 用一根时间线，把故事织成宇宙。面向小说作者、编剧与游戏叙事设计师的本地桌面创作工作台。",
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:server\"",

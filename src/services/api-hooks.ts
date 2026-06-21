@@ -5,6 +5,7 @@ import type {
   Workspace, TimelineEvent, Track, Character, Connection,
   Foreshadowing, WorldSetting, OutlineVersion, Map, Bookmark,
   Note, NoteFolder, NoteTag,
+  Scene, Beat, Choice,
   CreateWorkspaceRequest, UpdateWorkspaceRequest,
   CreateEventRequest, UpdateEventRequest,
   CreateTrackRequest, UpdateTrackRequest,
@@ -16,6 +17,9 @@ import type {
   CreateMapRequest, UpdateMapRequest,
   CreateBookmarkRequest, UpdateBookmarkRequest,
   CreateNoteRequest, UpdateNoteRequest, CreateNoteFolderRequest, CreateNoteTagRequest,
+  CreateSceneRequest, UpdateSceneRequest,
+  CreateBeatRequest, UpdateBeatRequest,
+  CreateChoiceRequest, UpdateChoiceRequest,
   ExportData,
 } from '../../shared/types.js';
 
@@ -412,7 +416,6 @@ export function useCreateNoteTag() {
   });
 }
 
-/** 删除标签 */
 export function useDeleteNoteTag() {
   const qc = useQueryClient();
   return useMutation({
@@ -423,6 +426,203 @@ export function useDeleteNoteTag() {
     onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ['noteTags', vars.workspaceId] });
       qc.invalidateQueries({ queryKey: ['notes', vars.workspaceId] });
+    },
+  });
+}
+
+// ============================================
+// 视觉小说（剧本编辑器）API Hooks (v1.2)
+// ============================================
+
+/** 场景列表 */
+export function useScenes(workspaceId: string | null) {
+  return useQuery({
+    queryKey: ['scenes', workspaceId],
+    queryFn: async () => {
+      if (!workspaceId) return [] as Scene[];
+      const res = await api.get<Scene[]>(`/api/workspaces/${workspaceId}/scenes`);
+      return res;
+    },
+    enabled: !!workspaceId,
+  });
+}
+
+/** 创建场景 */
+export function useCreateScene() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ workspaceId, data }: { workspaceId: string; data: CreateSceneRequest }) => {
+      const res = await api.post<Scene>(`/api/workspaces/${workspaceId}/scenes`, data);
+      return res;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['scenes', vars.workspaceId] });
+    },
+  });
+}
+
+/** 更新场景 */
+export function useUpdateScene() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateSceneRequest }) => {
+      const res = await api.put<Scene>(`/api/scenes/${id}`, data);
+      return res;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['scenes'] });
+    },
+  });
+}
+
+/** 删除场景 */
+export function useDeleteScene() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete<{ id: string }>(`/api/scenes/${id}`);
+      return res;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['scenes'] });
+    },
+  });
+}
+
+/** 节拍列表 */
+export function useBeats(sceneId: string | null) {
+  return useQuery({
+    queryKey: ['beats', sceneId],
+    queryFn: async () => {
+      if (!sceneId) return [] as Beat[];
+      const res = await api.get<Beat[]>(`/api/scenes/${sceneId}/beats`);
+      return res;
+    },
+    enabled: !!sceneId,
+  });
+}
+
+/** 创建节拍 */
+export function useCreateBeat() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sceneId, data }: { sceneId: string; data: CreateBeatRequest }) => {
+      const res = await api.post<Beat>(`/api/scenes/${sceneId}/beats`, data);
+      return res;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['beats', vars.sceneId] });
+    },
+  });
+}
+
+/** 更新节拍 */
+export function useUpdateBeat() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateBeatRequest }) => {
+      const res = await api.put<Beat>(`/api/beats/${id}`, data);
+      return res;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['beats'] });
+    },
+  });
+}
+
+/** 删除节拍 */
+export function useDeleteBeat() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete<{ id: string }>(`/api/beats/${id}`);
+      return res;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['beats'] });
+    },
+  });
+}
+
+/** 选项列表 */
+export function useChoices(beatId: string | null) {
+  return useQuery({
+    queryKey: ['choices', beatId],
+    queryFn: async () => {
+      if (!beatId) return [] as Choice[];
+      const res = await api.get<Choice[]>(`/api/beats/${beatId}/choices`);
+      return res;
+    },
+    enabled: !!beatId,
+  });
+}
+
+/** 创建选项 */
+export function useCreateChoice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ beatId, data }: { beatId: string; data: CreateChoiceRequest }) => {
+      const res = await api.post<Choice>(`/api/beats/${beatId}/choices`, data);
+      return res;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['choices', vars.beatId] });
+    },
+  });
+}
+
+/** 更新选项 */
+export function useUpdateChoice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: UpdateChoiceRequest }) => {
+      const res = await api.put<Choice>(`/api/choices/${id}`, data);
+      return res;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['choices'] });
+    },
+  });
+}
+
+/** 删除选项 */
+export function useDeleteChoice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete<{ id: string }>(`/api/choices/${id}`);
+      return res;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['choices'] });
+    },
+  });
+}
+
+// 批量重新排序场景
+export function useReorderScenes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ workspaceId, items }: { workspaceId: string; items: Array<{ id: string; sceneOrder: number }> }) => {
+      const res = await api.post<{ success: boolean }>(`/api/workspaces/${workspaceId}/scenes/reorder`, { items });
+      return res;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['scenes', vars.workspaceId] });
+    },
+  });
+}
+
+// 批量重新排序节拍
+export function useReorderBeats() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ sceneId, items }: { sceneId: string; items: Array<{ id: string; beatOrder: number }> }) => {
+      const res = await api.post<{ success: boolean }>(`/api/scenes/${sceneId}/beats/reorder`, { items });
+      return res;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['beats', vars.sceneId] });
     },
   });
 }

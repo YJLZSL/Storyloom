@@ -94,7 +94,7 @@ export function EmptyShell() {
           <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-primary/30 via-transparent to-primary/30 pointer-events-none" />
           <div className="flex items-center gap-2.5">
             <img src={faviconUrl} alt="Storyloom" className="size-7" />
-            <span className="font-serif text-base font-semibold tracking-wide">Storyloom · 絮织</span>
+            <span className="font-serif text-base font-semibold tracking-wide">Storyloom · 织叙</span>
           </div>
           <div className="flex items-center gap-1">
             <LanguageSelector />
@@ -129,7 +129,7 @@ export function EmptyShell() {
               <LoomSvg />
               <div className="text-center">
                 <h1 className="font-serif text-2xl font-bold tracking-wide text-foreground">
-                  Storyloom · 絮织
+                  Storyloom · 织叙
                 </h1>
                 <p className="mt-1.5 text-sm text-muted-foreground tracking-wide">
                   把时间织成故事
@@ -260,7 +260,7 @@ export function EmptyShell() {
             <div className="flex items-center gap-3">
               <img src={faviconUrl} alt="Storyloom" className="size-10" />
               <div>
-                <div className="font-serif text-base font-semibold">Storyloom · 絮织</div>
+                <div className="font-serif text-base font-semibold">Storyloom · 织叙</div>
                 <div className="text-xs text-muted-foreground">版本 v{APP_VERSION}</div>
               </div>
             </div>

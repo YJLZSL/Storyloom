@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type PanelType = 'properties' | 'event-editor' | 'ai' | 'characters' | 'worldview' | 'foreshadowing' | 'connections' | 'consistency' | 'shortcuts' | 'bookmarks' | 'maps' | null;
+type PanelType = 'properties' | 'event-editor' | 'ai' | 'characters' | 'worldview' | 'foreshadowing' | 'connections' | 'consistency' | 'shortcuts' | 'bookmarks' | 'maps' | 'script-editor' | null;
 
 // 页面 ID：新增 narrative/gantt/tree 以兼容时间轴子视图
-export type PageId = 'timeline' | 'characters' | 'outline' | 'narrative' | 'gantt' | 'tree' | 'notebook' | 'writing' | 'ai' | 'world' | 'stats' | 'relationship';
+export type PageId = 'timeline' | 'characters' | 'outline' | 'narrative' | 'gantt' | 'tree' | 'notebook' | 'writing' | 'ai' | 'world' | 'stats' | 'relationship' | 'script-editor';
 
 interface UIState {
   activePanel: PanelType;

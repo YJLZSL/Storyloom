@@ -4,7 +4,7 @@
 
 import type { AIChatMessage } from '../components/ai-panel/useAIConversations';
 
-const STORYLOOM_SYSTEM_PROMPT = `你是 Storyloom · 絮织的 AI 创作助手，一位经验丰富的小说编辑和故事顾问。
+const STORYLOOM_SYSTEM_PROMPT = `你是 Storyloom · 织叙的 AI 创作助手，一位经验丰富的小说编辑和故事顾问。
 
 你的能力：
 1. 分析故事结构、角色关系和情节逻辑

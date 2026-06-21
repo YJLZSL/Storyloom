@@ -86,7 +86,7 @@ export function WorkspaceSelector() {
           animate="show"
           className="mb-10"
         >
-          <h1 className="mb-2 font-serif text-3xl font-bold">Storyloom · 絮织</h1>
+          <h1 className="mb-2 font-serif text-3xl font-bold">Storyloom · 织叙</h1>
           <p className="text-muted-foreground">
             选择一个工作区开始创作，或创建一个新的时间轴
           </p>

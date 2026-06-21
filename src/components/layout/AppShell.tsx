@@ -27,6 +27,7 @@ import { EventDetailView } from '@/components/events/EventDetailView';
 import { NotebookView } from '@/components/notebook/NotebookView';
 import { AIAssistantView } from '@/components/ai/AIAssistantView';
 import { WritingView } from '@/components/writing/WritingView';
+import { ScriptEditorView } from '@/components/script-editor/ScriptEditorView';
 import { tryHandleShortcut, getCurrentContext } from '@/lib/shortcut-registry';
 import { setApiBase } from '@/services/api';
 import { getServerPort, isTauri } from '@/lib/tauri-api';
@@ -66,6 +67,8 @@ function MainCanvas() {
           return <AIAssistantView />;
         case 'writing':
           return <WritingView />;
+        case 'script-editor':
+          return <ScriptEditorView />;
         default:
           return (
             <div className="flex h-full items-center justify-center text-muted-foreground">
