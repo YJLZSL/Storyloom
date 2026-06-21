@@ -38,6 +38,7 @@
 - `docs/CHANGELOG-v1.1.5.md` — v1.1.5 详细更新日志
 
 ### 规划文档
+- `docs/REWRITE-WORKSPACE-TIMELINE.md` — **⚡ 工作区+时间轴重写蓝图**（v1.3.0 核心任务，含根因分析+重构方案+技能使用指南）
 - `docs/ROADMAP-v1.3+.md` — v1.3.0+ 后续方向规划
 - `docs/AI-INTEGRATION-GUIDE.md` — **AI 深度集成实施指南**（KV 缓存省钱 + 后端 + 前端 + 美术）
 - `docs/HANDOVER-v1.2.0.md` — v1.2.0 交接文档（含已知问题清单）
