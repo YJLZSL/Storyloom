@@ -15,9 +15,9 @@ interface SettingsRowProps {
  */
 export function SettingsRow({ label, description, children, className, htmlFor }: SettingsRowProps) {
   return (
-    <div className={cn('flex items-center justify-between gap-4', className)}>
-      <div className="flex flex-col gap-1 min-w-0">
-        <label htmlFor={htmlFor} className="text-sm font-medium text-foreground truncate">
+    <div className={cn('flex items-start justify-between gap-4', className)}>
+      <div className="flex flex-col gap-1 min-w-0 flex-1">
+        <label htmlFor={htmlFor} className="text-sm font-medium text-foreground whitespace-normal leading-tight">
           {label}
         </label>
         {description && (

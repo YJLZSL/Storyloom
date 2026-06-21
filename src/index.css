@@ -13,6 +13,8 @@
   --font-serif: 'Noto Serif SC', 'Source Han Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
   --font-sans: 'Noto Sans SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-mono: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  --font-display: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-pixel: 'ZCOOL QingKe HuangYou', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
   /* 圆角 */
   --radius-sm: 4px;
@@ -432,11 +434,11 @@
 }
 
 /* 字体族数据属性切换 */
-[data-font="system"] { --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+[data-font="system"] { --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC', 'PingFang SC', sans-serif; }
 [data-font="noto"] { --font-sans: 'Noto Sans SC', 'Source Han Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
 [data-font="inter"] { --font-sans: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
 [data-font="source-han"] { --font-sans: 'Source Han Sans SC', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
-[data-font="pixel"] { --font-sans: 'Press Start 2P', 'ZCOOL KuaiLe', 'Noto Sans SC', monospace; }
+[data-font="pixel"] { --font-sans: 'ZCOOL QingKe HuangYou', 'ZCOOL KuaiLe', 'Noto Sans SC', 'PingFang SC', sans-serif; --font-display: 'ZCOOL QingKe HuangYou', 'ZCOOL KuaiLe', 'Noto Sans SC', 'PingFang SC', sans-serif; }
 
 /* Anime.js 风格 — 霓虹渐变与流畅动画 */
 .anime-gradient {
@@ -460,8 +462,9 @@
 
 /* MC 像素风 */
 .mc-pixel {
-  font-family: 'Press Start 2P', 'ZCOOL KuaiLe', monospace;
+  font-family: var(--font-pixel);
   image-rendering: pixelated;
+  letter-spacing: 0.02em;
 }
 
 .mc-border {
@@ -487,6 +490,12 @@
 /* ===== 基础样式 ===== */
 * {
   border-color: rgb(var(--border));
+  font-family: inherit;
+}
+
+html {
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 body {
@@ -497,6 +506,13 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 代码和等宽元素使用等宽字体 */
+code, kbd, pre, samp, .font-mono {
+  font-family: var(--font-mono) !important;
 }
 
 /* 全局选区配色 */

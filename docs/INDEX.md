@@ -1,8 +1,8 @@
 # Storyloom 项目文档索引
 
 > **仓库地址**：`https://github.com/YJLZSL/Storyloom`
-> **版本**：v1.1.6
-> **最后更新**：2026-06-21
+> **版本**：v1.1.7
+> **最后更新**：2026-06-22
 
 ---
 
@@ -13,7 +13,7 @@
 | **快速开始** | 新成员上手指南 | [`docs/QUICKSTART.md`](./QUICKSTART.md) |
 | **开发指南** | 本地开发环境搭建与调试 | [`docs/DEVELOPMENT.md`](./DEVELOPMENT.md) |
 | **发版指南** | 标准发版流程（10步） | [`docs/RELEASING.md`](./RELEASING.md) |
-| **更新日志** | v1.1.6 完整更新内容 | [`docs/CHANGELOG-v1.1.6.md`](./CHANGELOG-v1.1.6.md) |
+| **更新日志** | v1.1.7 完整更新内容 | [`docs/CHANGELOG-v1.1.7.md`](./CHANGELOG-v1.1.7.md) |
 | **总更新日志** | 全版本历史记录 | [`CHANGELOG.md`](../CHANGELOG.md) |
 | **系统架构** | 技术栈与模块架构 | [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | **交接文档** | 项目交接给下一个 AI 的说明 | [`docs/HANDOVER.md`](./HANDOVER.md) |
@@ -30,7 +30,9 @@
 
 ### 版本记录
 - `CHANGELOG.md` — 全版本历史（根目录）
-- `docs/CHANGELOG-v1.1.5.md` — v1.1.5 详细更新日志（当前版本）
+- `docs/CHANGELOG-v1.1.7.md` — v1.1.7 详细更新日志（当前版本）
+- `docs/CHANGELOG-v1.1.6.md` — v1.1.6 详细更新日志
+- `docs/CHANGELOG-v1.1.5.md` — v1.1.5 详细更新日志
 
 ### 教程文档（应用内置）
 应用通过 `import.meta.glob('/public/tutorials/*.md')` 读取教程文件，所有教程存放在 `public/tutorials/` 目录：
@@ -117,15 +119,15 @@
 
 - TypeScript 编译：0 错误
 - 单元测试：193/193 通过
-- 构建产物：`release/Storyloom Setup 1.1.4.exe`（已签名）
-- `release/latest.yml`：`version: 1.1.4`，`url: Storyloom-Setup-1.1.4.exe`
+- 构建产物：`release/Storyloom-Setup-1.1.7.exe`（已签名）
+- `release/latest.yml`：`version: 1.1.7`，`url: Storyloom-Setup-1.1.7.exe`
 
 ---
 
 ## 历史版本安装包
 
 旧版本安装包已清理，仅保留当前版本：
-- `release/Storyloom Setup 1.1.4.exe` + `.blockmap` + `latest.yml`
+- `release/Storyloom-Setup-1.1.7.exe` + `.blockmap` + `latest.yml`
 
 ---
 

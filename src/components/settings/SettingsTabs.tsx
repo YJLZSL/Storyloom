@@ -123,11 +123,11 @@ function PreferencesTab() {
   }, [openLastWorkspace, autoSave, fontFamily, currentWorkspaceId, updateWorkspace]);
 
   const fontOptions: { value: typeof fontFamily; label: string }[] = [
-    { value: 'noto', label: 'Noto Sans SC（默认）' },
+    { value: 'noto', label: 'Noto Sans' },
     { value: 'system', label: '系统字体' },
     { value: 'inter', label: 'Inter' },
     { value: 'source-han', label: '思源黑体' },
-    { value: 'pixel', label: '像素风（MC）' },
+    { value: 'pixel', label: '像素风' },
   ];
 
   return (

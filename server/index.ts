@@ -24,6 +24,7 @@ import { beatsRoutes } from './routes/beats.js';
 import { choicesRoutes } from './routes/choices.js';
 import { flagsRoutes } from './routes/flags.js';
 import { mapsRoutes } from './routes/maps.js';
+import { bookmarksRoutes } from './routes/bookmarks.js';
 import { assetsRoutes } from './routes/assets.js';
 import { revisionsRoutes } from './routes/revisions.js';
 import { aiRoutes } from './routes/ai.js';
@@ -92,6 +93,7 @@ export async function createApp(options?: { logger?: boolean }) {
   await app.register(choicesRoutes, { prefix: '/api/beats/:beatId/choices' });
   await app.register(flagsRoutes, { prefix: '/api/workspaces/:workspaceId/flags' });
   await app.register(mapsRoutes, { prefix: '/api/workspaces/:workspaceId/maps' });
+  await app.register(bookmarksRoutes, { prefix: '/api/workspaces/:workspaceId/bookmarks' });
   await app.register(assetsRoutes, { prefix: '/api/workspaces/:workspaceId/assets' });
   await app.register(revisionsRoutes, { prefix: '/api/workspaces/:workspaceId/revisions' });
   await app.register(searchRoutes, { prefix: '/api/workspaces/:workspaceId' });

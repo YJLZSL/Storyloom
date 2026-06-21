@@ -634,6 +634,62 @@ export interface AIChatResponse {
   error?: string;
 }
 
+/** 地图 */
+export interface Map {
+  id: string;
+  workspaceId: string;
+  name: string;
+  backgroundAssetId: string | null;
+  width: number;
+  height: number;
+  markersJson: string; // JSON string of MapMarker[]
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/** 创建地图请求 */
+export interface CreateMapRequest {
+  id?: string;
+  name: string;
+  backgroundAssetId?: string | null;
+  width?: number;
+  height?: number;
+  markersJson?: string;
+}
+
+/** 更新地图请求 */
+export interface UpdateMapRequest {
+  name?: string;
+  backgroundAssetId?: string | null;
+  width?: number;
+  height?: number;
+  markersJson?: string;
+}
+
+/** 书签 */
+export interface Bookmark {
+  id: string;
+  workspaceId: string;
+  eventId: string;
+  name: string;
+  color: string;
+  createdAt: Date;
+}
+
+/** 创建书签请求 */
+export interface CreateBookmarkRequest {
+  eventId: string;
+  name: string;
+  color?: string;
+}
+
+/** 更新书签请求 */
+export interface UpdateBookmarkRequest {
+  name?: string;
+  color?: string;
+  eventId?: string;
+}
+
 /** 导出数据结构 */
 export interface ExportData {
   version: '4.0';

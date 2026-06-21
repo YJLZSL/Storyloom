@@ -578,6 +578,38 @@ export const replaceBody = {
 } as const;
 
 // ============================================
+// 书签 (v1.2)
+// ============================================
+
+export const bookmarkIdParam = {
+  type: 'object',
+  required: ['workspaceId', 'bookmarkId'],
+  properties: {
+    workspaceId: { type: 'string', pattern: UUID_PATTERN },
+    bookmarkId: { type: 'string', pattern: UUID_PATTERN },
+  },
+} as const;
+
+export const createBookmarkBody = {
+  type: 'object',
+  required: ['eventId', 'name'],
+  properties: {
+    eventId: { type: 'string', pattern: UUID_PATTERN },
+    name: { type: 'string', minLength: 1, maxLength: 100 },
+    color: { type: 'string', maxLength: 20 },
+  },
+} as const;
+
+export const updateBookmarkBody = {
+  type: 'object',
+  properties: {
+    name: { type: 'string', minLength: 1, maxLength: 100 },
+    color: { type: 'string', maxLength: 20 },
+    eventId: { type: 'string', pattern: UUID_PATTERN },
+  },
+} as const;
+
+// ============================================
 // 公共校验函数 (v1.3)
 // ============================================
 

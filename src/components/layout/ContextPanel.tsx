@@ -16,6 +16,8 @@ import { ForeshadowingPanel } from '@/components/foreshadowing/ForeshadowingPane
 import { ConnectionPanel } from '@/components/connection/ConnectionPanel';
 import { ConsistencyPanel } from '@/components/consistency/ConsistencyPanel';
 import { EventContextPanel } from './EventContextPanel';
+import { BookmarkPanel } from '@/components/bookmark/BookmarkPanel';
+import { MapView } from '@/components/maps/MapView';
 import type { TimelineEvent } from '../../../shared/types';
 
 const PANEL_TITLES: Record<string, string> = {
@@ -28,6 +30,8 @@ const PANEL_TITLES: Record<string, string> = {
   connections: 'contextPanel.connections',
   consistency: 'contextPanel.consistencyCheck',
   shortcuts: 'contextPanel.shortcuts',
+  bookmarks: '书签',
+  maps: '地图',
 };
 
 export function ContextPanel() {
@@ -275,6 +279,12 @@ function getPanelContent(
 
     case 'shortcuts':
       return { title: t(PANEL_TITLES.shortcuts), content: <ShortcutSettingsPanel onOpen={onOpenSettings} /> };
+
+    case 'bookmarks':
+      return { title: PANEL_TITLES.bookmarks, content: <BookmarkPanel /> };
+
+    case 'maps':
+      return { title: PANEL_TITLES.maps, content: <MapView /> };
 
     default:
       return { title: t('contextPanel.contextPanel'), content: <EmptyState /> };

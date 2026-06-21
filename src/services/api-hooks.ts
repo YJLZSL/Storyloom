@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { createTopLevelHooks, createNestedHooks } from './api-hooks-factory.js';
 import type {
   Workspace, TimelineEvent, Track, Character, Connection,
-  Foreshadowing, WorldSetting, OutlineVersion,
+  Foreshadowing, WorldSetting, OutlineVersion, Map, Bookmark,
   CreateWorkspaceRequest, UpdateWorkspaceRequest,
   CreateEventRequest, UpdateEventRequest,
   CreateTrackRequest, UpdateTrackRequest,
@@ -12,6 +12,8 @@ import type {
   CreateForeshadowingRequest, UpdateForeshadowingRequest,
   CreateWorldSettingRequest, UpdateWorldSettingRequest,
   CreateOutlineVersionRequest,
+  CreateMapRequest, UpdateMapRequest,
+  CreateBookmarkRequest, UpdateBookmarkRequest,
   ExportData,
 } from '../../shared/types.js';
 
@@ -199,6 +201,31 @@ export function useRestoreOutlineVersion() {
       ),
   });
 }
+
+// ─── Map ───
+const mapHooks = createNestedHooks<Map, CreateMapRequest, UpdateMapRequest, 'mapId'>(
+  'maps',
+  'maps',
+  { idFieldName: 'mapId' },
+);
+
+export const useMaps = mapHooks.useList;
+export const useMap = mapHooks.useOne;
+export const useCreateMap = mapHooks.useCreate;
+export const useUpdateMap = mapHooks.useUpdate;
+export const useDeleteMap = mapHooks.useDelete;
+
+// ─── Bookmark ───
+const bookmarkHooks = createNestedHooks<Bookmark, CreateBookmarkRequest, UpdateBookmarkRequest, 'bookmarkId'>(
+  'bookmarks',
+  'bookmarks',
+  { idFieldName: 'bookmarkId' },
+);
+
+export const useBookmarks = bookmarkHooks.useList;
+export const useCreateBookmark = bookmarkHooks.useCreate;
+export const useUpdateBookmark = bookmarkHooks.useUpdate;
+export const useDeleteBookmark = bookmarkHooks.useDelete;
 
 // 导入工作区数据（支持冲突处理策略）
 export function useImportWorkspace() {

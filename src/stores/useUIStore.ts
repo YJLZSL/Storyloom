@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type PanelType = 'properties' | 'event-editor' | 'ai' | 'characters' | 'worldview' | 'foreshadowing' | 'connections' | 'consistency' | 'shortcuts' | null;
+type PanelType = 'properties' | 'event-editor' | 'ai' | 'characters' | 'worldview' | 'foreshadowing' | 'connections' | 'consistency' | 'shortcuts' | 'bookmarks' | 'maps' | null;
 
 interface UIState {
   activePanel: PanelType;

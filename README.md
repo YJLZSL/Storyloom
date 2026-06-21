@@ -2,7 +2,7 @@
 
 > *Weave timelines into living stories.*
 
-[![version](https://img.shields.io/badge/version-v1.0.0-amber)](https://github.com/YJLZSL/Storyloom/releases/tag/v1.0.0)
+[![version](https://img.shields.io/badge/version-v1.2.0-amber)](https://github.com/YJLZSL/Storyloom/releases/tag/v1.2.0)
 [![status](https://img.shields.io/badge/status-active-brightgreen)](https://github.com/YJLZSL/Storyloom)
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![electron](https://img.shields.io/badge/electron-42-47848F)](https://www.electronjs.org/)

@@ -13,6 +13,8 @@ import {
   TimeIcon,
   MenuUnfoldIcon,
   MenuFoldIcon,
+  BookmarkIcon,
+  MapIcon,
   type IconParkIconProps,
 } from '@/lib/icons';
 import { TButton, TInput } from '@/components/ui-tdesign';
@@ -33,7 +35,7 @@ interface ToolItem {
   id: string;
   label: string;
   icon: IconComponent;
-  panelId: 'characters' | 'worldview' | 'foreshadowing' | 'ai' | 'connections' | 'consistency' | 'event-editor';
+  panelId: 'characters' | 'worldview' | 'foreshadowing' | 'ai' | 'connections' | 'consistency' | 'event-editor' | 'bookmarks' | 'maps';
 }
 
 /* ───────── 常量 ───────── */
@@ -49,6 +51,8 @@ const UTILITY_TOOLS: ToolItem[] = [
   { id: 'connections', label: 'Connections', icon: LinkIcon, panelId: 'connections' },
   { id: 'consistency', label: 'Consistency', icon: SettingIcon, panelId: 'consistency' },
   { id: 'event-editor', label: 'Event Editor', icon: EditIcon, panelId: 'event-editor' },
+  { id: 'bookmarks', label: 'Bookmarks', icon: BookmarkIcon, panelId: 'bookmarks' },
+  { id: 'maps', label: 'Maps', icon: MapIcon, panelId: 'maps' },
 ];
 
 export function LeftPanel() {
@@ -267,6 +271,8 @@ function ToolSection({
       connections: 'panels.connections',
       consistency: 'panels.consistency',
       'event-editor': 'panels.eventEditor',
+      bookmarks: '书签',
+      maps: '地图',
     };
     return t(keyMap[id] || id);
   };

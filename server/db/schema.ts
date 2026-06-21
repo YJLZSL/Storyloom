@@ -295,6 +295,19 @@ export const revisions = sqliteTable('revisions', {
   createdIdx: index('revisions_created_idx').on(table.createdAt),
 }));
 
+// 书签（快速定位时间轴事件）
+export const bookmarks = sqliteTable('bookmarks', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+  eventId: text('event_id').notNull().references(() => events.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  color: text('color').default('#3b82f6'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+}, (table) => ({
+  workspaceIdx: index('bookmarks_workspace_idx').on(table.workspaceId),
+  eventIdx: index('bookmarks_event_idx').on(table.eventId),
+}));
+
 // ============================================
 // AI 对话历史缓存表 (v3.5)
 // ============================================

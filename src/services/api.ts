@@ -27,12 +27,12 @@ async function request<T>(
   const url = `${API_BASE}${path}`;
   const options: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
   };
 
   if (body !== undefined) {
+    options.headers = {
+      'Content-Type': 'application/json',
+    };
     options.body = JSON.stringify(body);
   }
 

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dropdown } from 'tdesign-react';
 import type { DropdownOption } from 'tdesign-react';
@@ -10,7 +11,6 @@ import {
   CommandIcon,
   FolderOpenIcon,
   DownIcon,
-  DeleteIcon,
   TimeIcon,
   ListIcon,
   BookOpenIcon,
@@ -22,6 +22,7 @@ import {
   PaletteIcon,
   LayersIcon,
   FullScreenIcon,
+  SettingConfigIcon,
   type IconParkIconProps,
 } from '@/lib/icons';
 import { TButton, TSlider, TTooltip, TPopup } from '@/components/ui-tdesign';
@@ -38,10 +39,8 @@ import {
 import { useCommandContext } from '@/components/command-palette/commands';
 import { ThemeSelector } from '@/components/settings/ThemeSelector';
 import { LanguageSelector } from '@/components/layout/LanguageSelector';
+import { WorkspaceManagerDialog } from '@/components/workspace/WorkspaceManagerDialog';
 import { toast } from 'sonner';
-
-const ACTION_NEW = '__new__';
-const ACTION_DELETE_PREFIX = '__delete__:';
 
 type IconComponent = (props: IconParkIconProps) => React.ReactElement;
 
@@ -74,66 +73,49 @@ export function TopToolbar() {
   const activeView = useViewStore((s) => s.activeView);
   const setActiveView = useViewStore((s) => s.setActiveView);
 
+  const [workspaceManagerOpen, setWorkspaceManagerOpen] = useState(false);
+
   const { data: workspaces } = useWorkspaces();
   const { data: currentWorkspace } = useWorkspace(currentWorkspaceId);
   const createWorkspaceMutation = useCreateWorkspace();
   const deleteWorkspaceMutation = useDeleteWorkspace();
   const ctx = useCommandContext();
 
-  const workspaceOptions: DropdownOption[] = [
-    ...(workspaces || []).map((ws) => ({
-      content: ws.name,
-      value: ws.id,
-      active: ws.id === currentWorkspaceId,
-      prefixIcon: <FolderOpenIcon />,
-    })),
-    ...(workspaces || []).length > 0 ? [{ content: '', value: '__divider__', divider: true }] : [],
-    ...(workspaces || []).filter(ws => ws.id !== currentWorkspaceId).map((ws) => ({
-      content: `${t('workspace.deleteWorkspace')}「${ws.name}」`,
-      value: `${ACTION_DELETE_PREFIX}${ws.id}`,
-      theme: 'error' as const,
-      prefixIcon: <DeleteIcon />,
-    })),
-    ...(workspaces || []).filter(ws => ws.id !== currentWorkspaceId).length > 0 ? [{ content: '', value: '__divider2__', divider: true }] : [],
-    {
-      content: t('workspace.createNewWorkspace'),
-      value: ACTION_NEW,
-      prefixIcon: <PlusIcon />,
-    },
-  ];
+  // Dropdown 只保留工作区切换
+  const workspaceOptions: DropdownOption[] = (workspaces || []).map((ws) => ({
+    content: ws.name,
+    value: ws.id,
+    active: ws.id === currentWorkspaceId,
+    prefixIcon: <FolderOpenIcon />,
+  }));
 
-  const handleDropdownClick = (option: DropdownOption) => {
-    const value = option.value;
-    if (typeof value !== 'string') return;
-    if (value.startsWith('__header__:')) return; // 忽略父选项点击
-    if (value === ACTION_NEW) {
-      createWorkspaceMutation.mutate(
-        { name: t('workspace.defaultName', { date: new Date().toLocaleDateString() }) },
-        {
-          onSuccess: (workspace) => {
-            setCurrentWorkspace(workspace.id);
-            toast.success(t('workspace.created'));
-          },
-          onError: () => toast.error(t('workspace.createFailed')),
+  const handleSwitchWorkspace = (id: string) => {
+    setCurrentWorkspace(id);
+  };
+
+  const handleCreateWorkspace = () => {
+    createWorkspaceMutation.mutate(
+      { name: t('workspace.defaultName', { date: new Date().toLocaleDateString() }) },
+      {
+        onSuccess: (workspace) => {
+          setCurrentWorkspace(workspace.id);
+          toast.success(t('workspace.created'));
         },
-      );
-      return;
-    }
-    if (value.startsWith(ACTION_DELETE_PREFIX)) {
-      const id = value.slice(ACTION_DELETE_PREFIX.length);
-      if (!confirm(t('workspace.deleteConfirmShort'))) return;
-      deleteWorkspaceMutation.mutate(id, {
-        onSuccess: () => {
-          if (id === currentWorkspaceId) setCurrentWorkspace(null);
-          toast.success(t('workspace.deleted'));
-        },
-        onError: (err) => {
-          toast.error(`${t('workspace.deleteFailed')}: ${err.message}`);
-        },
-      });
-      return;
-    }
-    setCurrentWorkspace(value);
+        onError: () => toast.error(t('workspace.createFailed')),
+      },
+    );
+  };
+
+  const handleDeleteWorkspace = (id: string) => {
+    deleteWorkspaceMutation.mutate(id, {
+      onSuccess: () => {
+        if (id === currentWorkspaceId) setCurrentWorkspace(null);
+        toast.success(t('workspace.deleted'));
+      },
+      onError: (err) => {
+        toast.error(`${t('workspace.deleteFailed')}: ${err.message}`);
+      },
+    });
   };
 
   return (
@@ -152,12 +134,18 @@ export function TopToolbar() {
 
         <div className="h-5 w-px bg-border/60" />
 
+        {/* 工作区切换 Dropdown */}
         <Dropdown
           options={workspaceOptions}
           trigger="click"
           placement="bottom-left"
           minColumnWidth={180}
-          onClick={handleDropdownClick}
+          onClick={(option) => {
+            const value = option.value;
+            if (typeof value === 'string') {
+              handleSwitchWorkspace(value);
+            }
+          }}
         >
           <TButton variant="text" size="small" className="gap-1.5 font-medium rounded-md hover:bg-muted/80">
             <FolderOpenIcon className="size-4 text-muted-foreground" />
@@ -167,6 +155,16 @@ export function TopToolbar() {
             <DownIcon className="size-3 opacity-60 transition-transform duration-200" />
           </TButton>
         </Dropdown>
+
+        {/* 工作区管理按钮 */}
+        <TTooltip content={t('workspace.manageTitle') || '管理工作区'} placement="bottom">
+          <button
+            className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted/80 hover:text-foreground active:scale-90"
+            onClick={() => setWorkspaceManagerOpen(true)}
+          >
+            <SettingConfigIcon size={16} />
+          </button>
+        </TTooltip>
       </div>
 
       {/* 中间：视图 Tab */}
@@ -203,7 +201,7 @@ export function TopToolbar() {
         </div>
       </nav>
 
-      {/* 右侧：操作按钮区 - 精简设计 */}
+      {/* 右侧：操作按钮区 */}
       <div className="flex items-center gap-1">
         {/* 缩放控制组 */}
         <div className="flex items-center gap-0.5 rounded-xl bg-muted/50 px-1.5 py-1">
@@ -327,6 +325,24 @@ export function TopToolbar() {
           </TPopup>
         </div>
       </div>
+
+      {/* 工作区管理对话框 */}
+      <WorkspaceManagerDialog
+        open={workspaceManagerOpen}
+        onClose={() => setWorkspaceManagerOpen(false)}
+        workspaces={workspaces || []}
+        currentWorkspaceId={currentWorkspaceId}
+        onSwitch={(id) => {
+          setCurrentWorkspace(id);
+          setWorkspaceManagerOpen(false);
+        }}
+        onDelete={handleDeleteWorkspace}
+        onCreate={() => {
+          handleCreateWorkspace();
+          setWorkspaceManagerOpen(false);
+        }}
+        isDeleting={deleteWorkspaceMutation.isPending}
+      />
     </header>
   );
 }

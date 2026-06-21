@@ -86,6 +86,9 @@ import {
   FileCode,
   Round,
   Loading,
+  Bookmark,
+  MapDraw,
+  Pin,
 } from '@icon-park/react';
 
 export type IconParkTheme = 'outline' | 'filled' | 'two-tone' | 'multi-color';
@@ -192,3 +195,6 @@ export const FilmIcon = withDefaults(Film as ComponentType<IconParkIconProps>);
 export const ArrowRightIcon = withDefaults(ArrowRight as ComponentType<IconParkIconProps>);
 export const FireIcon = withDefaults(Fire as ComponentType<IconParkIconProps>);
 export const FileCodeIcon = withDefaults(FileCode as ComponentType<IconParkIconProps>);
+export const BookmarkIcon = withDefaults(Bookmark as ComponentType<IconParkIconProps>);
+export const MapIcon = withDefaults(MapDraw as ComponentType<IconParkIconProps>);
+export const PinIcon = withDefaults(Pin as ComponentType<IconParkIconProps>);
