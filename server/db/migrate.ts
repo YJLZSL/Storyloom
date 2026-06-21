@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // CLI / standalone migration script — console output goes to terminal
-import { getDb, getSqlite, runMigrations, closeDb, DATA_DIR } from './index.js';
+import { getDb, getSqlite, runMigrations, DATA_DIR } from './index.js';
 import path from 'path';
 import fs from 'fs';
 

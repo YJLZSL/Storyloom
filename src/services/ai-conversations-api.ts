@@ -81,19 +81,29 @@ interface DbAIConversation {
   updatedAt: string | Date | number;
 }
 
+interface DbMessage {
+  id?: string;
+  role?: string;
+  content?: string;
+  createdAt?: number;
+  timestamp?: number;
+  degraded?: boolean;
+  error?: string;
+}
+
 function dbToFrontend(db: DbAIConversation): AIConversation {
   const messages: AIChatMessage[] = (() => {
     try {
       const parsed = JSON.parse(db.messagesJson || '[]');
       if (!Array.isArray(parsed)) return [];
-      return parsed.map((m: any) => ({
+      return parsed.map((m: DbMessage) => ({
         id: m.id || `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
         role: m.role || 'user',
         content: m.content || '',
         createdAt: m.createdAt || m.timestamp || Date.now(),
         degraded: m.degraded || false,
         error: m.error || undefined,
-      }));
+      })) as AIChatMessage[];
     } catch {
       return [];
     }

@@ -3,7 +3,7 @@ import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { foreshadowings } from '../db/schema.js';
 import { workspaceIdParam, foreshadowingIdParam, createForeshadowingBody, updateForeshadowingBody, validateWorkspaceExists } from '../lib/validation.js';
-import type { CreateForeshadowingRequest, UpdateForeshadowingRequest, Foreshadowing } from '../../shared/types.js';
+import type { CreateForeshadowingRequest, UpdateForeshadowingRequest } from '../../shared/types.js';
 
 function parseRelatedIds(raw: unknown): string[] {
   if (!raw) return [];

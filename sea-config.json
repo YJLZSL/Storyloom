@@ -1,7 +1,0 @@
-{
-  "main": "dist-server/sidecar-bundle.cjs",
-  "output": "dist-server/sea-prep.blob",
-  "disableExperimentalSEAWarning": true,
-  "useSnapshot": false,
-  "useCodeCache": true
-}

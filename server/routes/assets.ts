@@ -2,9 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { createHash } from 'crypto';
-import { createReadStream, existsSync, mkdirSync, statSync } from 'fs';
+import { createReadStream, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { pipeline } from 'stream/promises';
 import { assets, workspaces, characters, events, scenes, characterAssets, eventAssets, sceneAssets } from '../db/schema.js';
 import {
   workspaceIdParam,

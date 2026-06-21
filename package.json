@@ -17,11 +17,7 @@
     "typecheck": "tsc -b --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e:chromium": "python scripts/comprehensive_v1_0_0_test.py --browser=chromium",
-    "test:e2e:firefox": "python scripts/comprehensive_v1_0_0_test.py --browser=firefox",
-    "test:e2e:webkit": "python scripts/comprehensive_v1_0_0_test.py --browser=webkit",
-    "test:e2e:all": "python scripts/comprehensive_v1_0_0_test.py --browser=all",
-    "test:visual": "python scripts/visual_browser_smoke.py --headed"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@fastify/compress": "^8.0.0",

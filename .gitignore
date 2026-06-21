@@ -7,6 +7,7 @@ dist-server/
 electron-out/
 release/
 release-*/
+release-v1.2.1/
 win-unpacked/
 out-dist/
 *.asar
@@ -67,3 +68,24 @@ audit_frontend.py
 screenshot-*.png
 test_workspace.json
 docs/screenshots/browser-audit-current/
+
+# Security — signing keys
+src-tauri/signing-keys.key
+src-tauri/signing-keys.key.pub
+
+# Sidecar compiled binaries
+src-tauri/sidecars/*.node
+
+# System directories
+NVIDIA Corporation/
+
+# Old plan files
+plan*.md
+
+# Unused config files
+sea-config.json
+
+# Audit reports (generated, not source)
+reports/*-cleanup-done.md
+reports/*-scan.md
+reports/*-audit-v2.md

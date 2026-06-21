@@ -147,13 +147,7 @@ export async function createApp(options?: { logger?: boolean }) {
 
   // 生产模式 Web 服务器：静态文件服务（Electron 模式不需要，由 loadFile 直接加载）
   if (process.env.STATIC_DIR) {
-    let distPath = process.env.STATIC_DIR;
-    if (!distPath) {
-      const moduleDir = path.dirname(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')));
-      const moduleDistPath = path.join(moduleDir, 'dist');
-      const cwdDistPath = path.resolve(process.cwd(), 'dist');
-      distPath = fs.existsSync(moduleDistPath) ? moduleDistPath : cwdDistPath;
-    }
+    const distPath = process.env.STATIC_DIR;
 
     await app.register(staticPlugin, {
       root: distPath,

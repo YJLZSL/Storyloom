@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { eq, and, between, like, desc, asc, sql } from 'drizzle-orm';
+import { eq, and, between, desc, asc, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { events, eventCharacters, eventWorldSettings, characters } from '../db/schema.js';
 import { workspaceIdParam, eventIdParam, createEventBody, updateEventBody, validateWorkspaceExists } from '../lib/validation.js';
