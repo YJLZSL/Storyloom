@@ -240,7 +240,12 @@ const isDirectRun = (() => {
   const entry = process.argv[1];
   if (!entry) return false;
   try {
-    return pathToFileURL(__filename).href === pathToFileURL(entry).href;
+    const entryUrl = pathToFileURL(entry).href;
+    const fileUrl = pathToFileURL(__filename).href;
+    // 兼容 tsx：entry 可能使用 .ts 或 .tsx，fileUrl 使用 .js
+    return entryUrl === fileUrl ||
+      entryUrl.replace('.tsx', '.ts') === fileUrl.replace('.js', '.ts') ||
+      entry.endsWith('server/index.ts') || entry.endsWith('server/index.tsx');
   } catch {
     return false;
   }
