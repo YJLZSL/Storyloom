@@ -234,12 +234,13 @@ export async function startServer(port?: number): Promise<void> {
 }
 
 // 直接运行时启动服务器（仅当作为主入口执行时）
-// 使用 import.meta.url === pathToFileURL(process.argv[1]) 比较，避免子串误匹配
+// 在 sidecar 模式下，由 sidecar-entry.js 显式调用 startServer，不自动启动
 const isDirectRun = (() => {
+  if (process.env.STORYLOOM_SIDECAR === '1') return false;
   const entry = process.argv[1];
   if (!entry) return false;
   try {
-    return import.meta.url === pathToFileURL(entry).href;
+    return pathToFileURL(__filename).href === pathToFileURL(entry).href;
   } catch {
     return false;
   }

@@ -41,12 +41,12 @@ function App() {
           setApiBase(port);
           setBooting(false);
         });
-        // 15 秒后超时，最后一次重试获取端口
+        // 5 秒后超时，最后一次重试获取端口
         const timer = setTimeout(() => {
           getServerPort()
             .then((port) => { setApiBase(port); setBooting(false); })
             .catch(() => setBooting(false));
-        }, 15000);
+        }, 5000);
         return () => {
           off();
           clearTimeout(timer);

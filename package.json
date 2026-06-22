@@ -19,6 +19,15 @@
     "test:watch": "vitest",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
+  "pkg": {
+    "scripts": [
+      "dist-server/**/*.js"
+    ],
+    "assets": [
+      "node_modules/better-sqlite3/build/Release/better_sqlite3.node",
+      "drizzle/**/*"
+    ]
+  },
   "dependencies": {
     "@fastify/compress": "^8.0.0",
     "@fastify/cors": "^11.0.0",

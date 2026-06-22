@@ -54,7 +54,20 @@ export function getDb(): ReturnType<typeof drizzle> {
 
   const dbPath = path.join(DATA_DIR, DB_FILENAME);
 
-  sqliteInstance = new Database(dbPath);
+  // Sidecar 模式下使用 process.dlopen 直接加载原生模块（绕过 SEA 中 embedderRequire 的限制）
+  if (isSidecar) {
+    const nativePath = path.join(path.dirname(process.execPath), 'build', 'Release', 'better_sqlite3.node');
+    const addon = { exports: {} };
+    try {
+      process.dlopen(addon, nativePath);
+    } catch (err) {
+      dbLog.error({ err, nativePath }, '加载 better-sqlite3 原生模块失败');
+      throw err;
+    }
+    sqliteInstance = new Database(dbPath, { nativeBinding: addon.exports as any });
+  } else {
+    sqliteInstance = new Database(dbPath);
+  }
 
   // 启用 WAL 模式（提升并发读写性能）
   sqliteInstance.pragma('journal_mode = WAL');
@@ -92,7 +105,8 @@ export function runMigrations(): void {
   let migrationsPath = process.env.MIGRATIONS_DIR;
 
   if (!migrationsPath) {
-    const moduleDir = path.dirname(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')));
+    // CommonJS 兼容：用 __dirname 替代 import.meta.url
+    const moduleDir = path.dirname(__dirname);
     const moduleMigrationsPath = path.join(moduleDir, 'drizzle');
     const cwdMigrationsPath = path.join(process.cwd(), 'drizzle');
     migrationsPath = fs.existsSync(moduleMigrationsPath) ? moduleMigrationsPath : cwdMigrationsPath;
